@@ -36,6 +36,7 @@ st.title("💅 Agenda Dinâmica de Atendimentos")
 
 # Barra lateral para cadastro rápido de novo horário
 with st.sidebar:
+    st.image("logo.JPG", use_container_width=True)
     st.header("➕ Novo Agendamento")
     with st.form("form_rapido", clear_on_submit=True):
         nome_cliente = st.text_input("Nome da Cliente*")
