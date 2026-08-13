@@ -5,7 +5,12 @@ import streamlit as st
 
 # Configuração da página
 st.set_page_config(
-    page_title="Agenda de Atendimentos", layout="wide", page_icon="💅"
+    page_title="Studio de Beleza - Agenda", layout="wide", page_icon="💅"
+)
+
+# --- BLOQUEIO ANTI-TRADUÇÃO (Evita erro de tradutor do Chrome) ---
+st.markdown(
+    '<meta name="google" content="notranslate">', unsafe_allow_html=True
 )
 
 
@@ -32,27 +37,34 @@ def init_db():
 
 init_db()
 
+# --- PAINEL PRINCIPAL: TÍTULO ---
 st.title("💅 Agenda studio Maria Rossatto")
 
-# Barra lateral para cadastro rápido de novo horário
+# --- BARRA LATERAL (FOTO E CADASTRO) ---
 with st.sidebar:
     st.image("logo.JPG", use_container_width=True)
     st.header("➕ Novo Agendamento")
+
     with st.form("form_rapido", clear_on_submit=True):
         nome_cliente = st.text_input("Nome da Cliente*")
-        telefone = st.text_input("WhatsApp", placeholder="54999999999")
+        telefone = st.text_input("WhatsApp", placeholder="54991341375")
         servico = st.selectbox(
             "Serviço*",
             [
-                "Aplicação de Gel",
+                "Mão tradicional",
+                "Pé tradicional",
+                "Blindagem",
+                "Esmaltação em gel",
+                "Banho de gel",
+                "Alongamento",
                 "Manutenção",
-                "Esmaltação em Gel",
-                "Pé e Mão",
-                "Retoque",
+                "Pacote de mão",
             ],
         )
         data_atendimento = st.date_input("Data*", value=date.today())
-        horario = st.time_input("Horário*", value=datetime.strptime("14:00", "%H:%M").time())
+        horario = st.time_input(
+            "Horário*", value=datetime.strptime("14:00", "%H:%M").time()
+        )
 
         salvar = st.form_submit_button("Salvar Horário")
 
@@ -78,7 +90,7 @@ with st.sidebar:
                 st.success("Horário marcado!")
                 st.rerun()
 
-# --- FILTRO POR DIA NO CORPO PRINCIPAL ---
+# --- FILTRO POR DIA E LEITURA DOS DADOS ---
 data_selecionada = st.date_input(
     "📆 Escolha o dia para visualizar:", value=date.today()
 )
@@ -93,9 +105,41 @@ conn.close()
 
 st.markdown(f"### 📋 Horários de **{data_selecionada.strftime('%d/%m/%Y')}**")
 
-if df.empty:
-    st.info("Nenhum atendimento marcado para este dia.")
+# --- BOTÃO VERDE DO RESUMO NO WHATSAPP ---
+if not df.empty:
+    texto_resumo = f"💅 *Resumo de Atendimentos ({data_selecionada.strftime('%d/%m/%Y')}):*\n\n"
+    for _, row in df.iterrows():
+        texto_resumo += f"⏰ *{row['horario']}* — {row['nome_cliente']} ({row['servico']})\n"
+
+    # Mude o número abaixo para o WhatsApp onde ela quer receber a lista (DDD + Número)
+    numero_whatsapp = "5554999999999"
+
+    link_resumo = f"https://wa.me/{numero_whatsapp}?text={texto_resumo.replace(' ', '%20').replace('\n', '%0A')}"
+
+    st.markdown(
+        f"""
+        <a href="{link_resumo}" target="_blank" style="text-decoration: none;">
+            <button style="
+                background-color: #25D366;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 16px;
+                cursor: pointer;
+                margin-bottom: 20px;">
+                📲 Enviar Lista de Hoje no Meu WhatsApp
+            </button>
+        </a>
+    """,
+        unsafe_allow_html=True,
+    )
 else:
+    st.info("Nenhum atendimento marcado para este dia.")
+
+# --- LISTA DOS CARDS DOS AGENDAMENTOS ---
+if not df.empty:
     cols = st.columns(2)
     for idx, row in df.iterrows():
         col_atual = cols[idx % 2]
