@@ -47,7 +47,7 @@ with st.sidebar:
 
     with st.form("form_rapido", clear_on_submit=True):
         nome_cliente = st.text_input("Nome da Cliente*")
-        telefone = st.text_input("WhatsApp", placeholder="54991341375")
+        telefone = st.text_input("WhatsApp", placeholder="5554991341375")
         servico = st.selectbox(
             "Serviço*",
             [
