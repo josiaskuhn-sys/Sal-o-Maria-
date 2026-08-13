@@ -32,7 +32,7 @@ def init_db():
 
 init_db()
 
-st.title("💅 Agenda Dinâmica de Atendimentos")
+st.title("💅 Agenda studio Maria Rossatto")
 
 # Barra lateral para cadastro rápido de novo horário
 with st.sidebar:
