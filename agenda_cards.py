@@ -47,7 +47,7 @@ with st.sidebar:
 
     with st.form("form_rapido", clear_on_submit=True):
         nome_cliente = st.text_input("Nome da Cliente*")
-        telefone = st.text_input("WhatsApp", placeholder="5554991341375")
+        telefone = st.text_input("WhatsApp", placeholder="5554999999999")
         servico = st.selectbox(
             "Serviço*",
             [
@@ -112,7 +112,7 @@ if not df.empty:
         texto_resumo += f"⏰ *{row['horario']}* — {row['nome_cliente']} ({row['servico']})\n"
 
     # Mude o número abaixo para o WhatsApp onde ela quer receber a lista (DDD + Número)
-    numero_whatsapp = "5554999999999"
+    numero_whatsapp = "5554991341375"
 
     link_resumo = f"https://wa.me/{numero_whatsapp}?text={texto_resumo.replace(' ', '%20').replace('\n', '%0A')}"
 
