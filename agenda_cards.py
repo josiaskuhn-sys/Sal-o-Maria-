@@ -2,13 +2,14 @@ import sqlite3
 from datetime import date, datetime
 import pandas as pd
 import streamlit as st
+from streamlit_calendar import calendar
 
 # Configuração da página
 st.set_page_config(
     page_title="Studio de Beleza - Agenda", layout="wide", page_icon="💅"
 )
 
-# --- BLOQUEIO ANTI-TRADUÇÃO (Evita erro de tradutor do Chrome) ---
+# --- BLOQUEIO ANTI-TRADUÇÃO ---
 st.markdown(
     '<meta name="google" content="notranslate">', unsafe_allow_html=True
 )
@@ -37,17 +38,14 @@ def init_db():
 
 init_db()
 
-# --- PAINEL PRINCIPAL: TÍTULO ---
-st.title("💅 Agenda studio Maria Rossatto")
-
-# --- BARRA LATERAL (FOTO E CADASTRO) ---
+# --- BARRA LATERAL (FOTO E NOVO AGENDAMENTO) ---
 with st.sidebar:
     st.image("logo.JPG", use_container_width=True)
     st.header("➕ Novo Agendamento")
 
     with st.form("form_rapido", clear_on_submit=True):
         nome_cliente = st.text_input("Nome da Cliente*")
-        telefone = st.text_input("WhatsApp", placeholder="5554999999999")
+        telefone = st.text_input("WhatsApp", placeholder="54991341375")
         servico = st.selectbox(
             "Serviço*",
             [
@@ -61,7 +59,9 @@ with st.sidebar:
                 "Pacote de mão",
             ],
         )
-        data_atendimento = st.date_input("Data*", value=date.today())
+        data_atendimento = st.date_input(
+            "Data*", value=date.today(), format="DD/MM/YYYY"
+        )
         horario = st.time_input(
             "Horário*", value=datetime.strptime("14:00", "%H:%M").time()
         )
@@ -90,9 +90,55 @@ with st.sidebar:
                 st.success("Horário marcado!")
                 st.rerun()
 
-# --- FILTRO POR DIA E LEITURA DOS DADOS ---
+# --- PAINEL PRINCIPAL ---
+st.title("💅 Agenda studio Maria Rossatto")
+
+# --- BUSCA TODOS OS AGENDAMENTOS PARA O CALENDÁRIO ---
+conn = sqlite3.connect("agenda_unhas_v2.db")
+df_todos = pd.read_sql_query("SELECT * FROM agendamentos", conn)
+conn.close()
+
+# Converte os agendamentos no formato de eventos que o calendário entende
+eventos_calendario = []
+for _, row in df_todos.iterrows():
+    eventos_calendario.append(
+        {
+            "title": f"⏰ {row['horario']} - {row['nome_cliente']} ({row['servico']})",
+            "start": f"{row['data_atendimento']}T{row['horario']}:00",
+            "backgroundColor": "#FF4B4B"
+            if row["status"] == "Agendado"
+            else "#25D366",
+            "borderColor": "#ffffff",
+        }
+    )
+
+# Configurações do Calendário Interativo
+opcoes_calendario = {
+    "headerToolbar": {
+        "left": "prev,next today",
+        "center": "title",
+        "right": "dayGridMonth,timeGridWeek,listMonth",
+    },
+    "initialView": "dayGridMonth",
+    "selectable": True,
+    "locale": "pt-br",
+    "buttonText": {
+        "today": "Hoje",
+        "month": "Mês",
+        "week": "Semana",
+        "list": "Lista",
+    },
+}
+
+# Renderiza o Calendário Visual
+st.markdown("### 📅 Visão Geral de Atendimentos")
+state = calendar(events=eventos_calendario, options=opcoes_calendario, key="cal_studio")
+
+st.divider()
+
+# --- FILTRO POR DIA SELECIONADO ---
 data_selecionada = st.date_input(
-    "📆 Escolha o dia para visualizar:", value=date.today()
+    "📆 Ver detalhes do dia:", value=date.today(), format="DD/MM/YYYY"
 )
 
 conn = sqlite3.connect("agenda_unhas_v2.db")
@@ -105,13 +151,12 @@ conn.close()
 
 st.markdown(f"### 📋 Horários de **{data_selecionada.strftime('%d/%m/%Y')}**")
 
-# --- BOTÃO VERDE DO RESUMO NO WHATSAPP ---
+# --- BOTÃO DE RESUMO NO WHATSAPP ---
 if not df.empty:
     texto_resumo = f"💅 *Resumo de Atendimentos ({data_selecionada.strftime('%d/%m/%Y')}):*\n\n"
     for _, row in df.iterrows():
         texto_resumo += f"⏰ *{row['horario']}* — {row['nome_cliente']} ({row['servico']})\n"
 
-    # Mude o número abaixo para o WhatsApp onde ela quer receber a lista (DDD + Número)
     numero_whatsapp = "5554991341375"
 
     link_resumo = f"https://wa.me/{numero_whatsapp}?text={texto_resumo.replace(' ', '%20').replace('\n', '%0A')}"
@@ -138,7 +183,7 @@ if not df.empty:
 else:
     st.info("Nenhum atendimento marcado para este dia.")
 
-# --- LISTA DOS CARDS DOS AGENDAMENTOS ---
+# --- CARDS DOS AGENDAMENTOS ---
 if not df.empty:
     cols = st.columns(2)
     for idx, row in df.iterrows():
