@@ -77,7 +77,7 @@ def init_db():
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('titulo_studio', 'Studio Maria Rossatto')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('subtitulo_studio', 'Sistema de Gestão & Retenção')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('whatsapp_studio', '5554991341375')")
-    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('tema_estilo', 'Clean White (Tudo Branco)')")
+    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('tema_estilo', 'Dourado Luxo')")
 
     # Auto-delete da lixeira (mais de 30 dias)
     limite_30_dias = str(date.today() - timedelta(days=30))
@@ -109,6 +109,16 @@ st.set_page_config(
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
+    "Dourado Luxo": """
+        <style>
+            .stApp { background-color: #FDFBF7 !important; color: #33322E !important; }
+            .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #E3DDD5; }
+            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #E3DDD5 !important; }
+            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #E3DDD5 !important; }
+            .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; }
+            div[data-testid="stMetricValue"] { color: #A88234 !important; }
+        </style>
+    """,
     "Clean White (Tudo Branco)": """
         <style>
             .stApp { background-color: #FFFFFF !important; color: #222222 !important; }
@@ -143,17 +153,9 @@ estilos_css = {
             div[data-testid="stMetricValue"] { color: #7C3AED !important; }
         </style>
     """,
-    "Nude / Minimalista": """
-        <style>
-            .stApp { background-color: #FAF8F5; color: #3D3B37; }
-            .stSidebar { background-color: #F0ECE1; }
-            .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; }
-            div[data-testid="stMetricValue"] { color: #A37E38 !important; }
-        </style>
-    """,
 }
 
-st.markdown(estilos_css.get(tema_atual, estilos_css["Clean White (Tudo Branco)"]), unsafe_allow_html=True)
+st.markdown(estilos_css.get(tema_atual, estilos_css["Dourado Luxo"]), unsafe_allow_html=True)
 
 # --- BLOQUEIO ANTI-TRADUÇÃO ---
 st.markdown(
@@ -849,10 +851,10 @@ with aba_lixeira:
                         st.rerun()
 
 # ==========================================
-# ABA 5: CONFIGURAÇÕES, TEMA E BACKUP
+# ABA 5: CONFIGURAÇÕES & TEMA VISUAL
 # ==========================================
 with aba_config:
-    st.subheader("⚙️ Configurações de Nome, Contato e Aparência")
+    st.subheader("⚙️ Configurações de Nome, Contato e Aparência do Studio")
     st.write("Altere as informações e as cores do aplicativo a qualquer momento.")
 
     with st.form("form_config_studio"):
@@ -862,6 +864,7 @@ with aba_config:
 
         # SELETOR DE TEMAS VISUAIS
         temas_disponiveis = [
+            "Dourado Luxo",
             "Clean White (Tudo Branco)",
             "Nude / Rosé",
             "Dark Elegance",
@@ -885,7 +888,7 @@ with aba_config:
             st.success("Configurações e cores salvas com sucesso!")
             st.rerun()
 
-    # --- NOVA SEÇÃO DE BACKUP SEGURO ---
+    # --- SEÇÃO DE BACKUP SEGURO ---
     st.divider()
     st.subheader("🛡️ Backup e Segurança de Dados")
     st.warning("⚠️ **Atenção:** Como o sistema roda na nuvem, sempre que você for atualizar o código ou reiniciar o app, **BAIXE O BACKUP** primeiro para não perder suas clientes!")
