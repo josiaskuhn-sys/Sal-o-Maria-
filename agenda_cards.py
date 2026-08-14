@@ -77,7 +77,7 @@ def init_db():
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('titulo_studio', 'Studio Maria Rossatto')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('subtitulo_studio', 'Sistema de Gestão & Retenção')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('whatsapp_studio', '5554991341375')")
-    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('tema_estilo', 'Nude / Rosé')")
+    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('tema_estilo', 'Clean White (Tudo Branco)')")
 
     # Auto-delete da lixeira (mais de 30 dias)
     limite_30_dias = str(date.today() - timedelta(days=30))
@@ -109,6 +109,16 @@ st.set_page_config(
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
+    "Clean White (Tudo Branco)": """
+        <style>
+            .stApp { background-color: #FFFFFF !important; color: #222222 !important; }
+            .stSidebar { background-color: #FAFAFA !important; border-right: 1px solid #EAEAEA; }
+            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #E0E0E0 !important; }
+            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #E0E0E0 !important; }
+            .stButton>button { background-color: #000000 !important; color: white !important; border-radius: 8px !important; border: none !important; }
+            div[data-testid="stMetricValue"] { color: #000000 !important; }
+        </style>
+    """,
     "Nude / Rosé": """
         <style>
             .stApp { background-color: #FFF9F9; color: #4A3E3D; }
@@ -143,7 +153,7 @@ estilos_css = {
     """,
 }
 
-st.markdown(estilos_css.get(tema_atual, estilos_css["Nude / Rosé"]), unsafe_allow_html=True)
+st.markdown(estilos_css.get(tema_atual, estilos_css["Clean White (Tudo Branco)"]), unsafe_allow_html=True)
 
 # --- BLOQUEIO ANTI-TRADUÇÃO ---
 st.markdown(
@@ -851,7 +861,13 @@ with aba_config:
         novo_wa_padrao = st.text_input("WhatsApp Principal (para receber a lista do dia):", value=get_config("whatsapp_studio"))
 
         # SELETOR DE TEMAS VISUAIS
-        temas_disponiveis = ["Nude / Rosé", "Dark Elegance", "Lavanda / Soft Purple", "Nude / Minimalista"]
+        temas_disponiveis = [
+            "Clean White (Tudo Branco)",
+            "Nude / Rosé",
+            "Dark Elegance",
+            "Lavanda / Soft Purple",
+            "Nude / Minimalista",
+        ]
         index_tema = temas_disponiveis.index(tema_atual) if tema_atual in temas_disponiveis else 0
         novo_tema = st.selectbox("🎨 Tema Visual de Cores:", temas_disponiveis, index=index_tema)
 
