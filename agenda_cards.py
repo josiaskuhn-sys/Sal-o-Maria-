@@ -17,7 +17,7 @@ st.markdown(
 )
 
 
-# --- BANCO DE DADOS ---
+# --- BANCO DE DADOS & LIXEIRA ---
 def init_db():
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
@@ -50,6 +50,36 @@ def init_db():
     """
     )
 
+    # Tabela 3: Minhas Tarefas / Anotações
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tarefas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo TEXT NOT NULL,
+            descricao TEXT,
+            prioridade TEXT DEFAULT 'Média',
+            data_criacao DATE NOT NULL,
+            concluido INTEGER DEFAULT 0
+        )
+    """
+    )
+
+    # Tabela 4: Lixeira Inteligente (Guarda tipo, dados originais em JSON e data da deleção)
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS lixeira (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo_item TEXT NOT NULL, -- 'agendamento', 'crm', 'tarefa'
+            dados_item TEXT NOT NULL, -- formato de texto/dados
+            data_exclusao DATE NOT NULL
+        )
+    """
+    )
+
+    # --- AUTO-DELETE DA LIXEIRA (Apaga itens com mais de 30 dias) ---
+    limite_30_dias = str(date.today() - timedelta(days=30))
+    c.execute("DELETE FROM lixeira WHERE data_exclusao < ?", (limite_30_dias,))
+
     conn.commit()
     conn.close()
 
@@ -62,7 +92,11 @@ with st.sidebar:
 
     tipo_cadastro = st.radio(
         "Selecione a ação:",
-        ["📅 Novo Agendamento (Horário)", "👤 Cadastrar Cliente (CRM)"],
+        [
+            "📅 Novo Agendamento (Horário)",
+            "👤 Cadastrar Cliente (CRM)",
+            "📝 Nova Tarefa / Anotação",
+        ],
     )
 
     st.divider()
@@ -116,7 +150,7 @@ with st.sidebar:
                     st.success("Horário marcado!")
                     st.rerun()
 
-    else:
+    elif tipo_cadastro == "👤 Cadastrar Cliente (CRM)":
         st.header("➕ Cadastrar p/ CRM")
         with st.form("form_cliente_crm", clear_on_submit=True):
             nome = st.text_input("Nome da Cliente*")
@@ -133,28 +167,75 @@ with st.sidebar:
             salvar_crm = st.form_submit_button("Salvar no CRM")
 
             if salvar_crm:
-                if not nome or not telefone:
-                    st.error("Preencha o Nome e o WhatsApp!")
+                tel_clean = "".join(filter(str.isdigit, str(telefone)))
+                if not nome or not tel_clean:
+                    st.error("Preencha o Nome e um WhatsApp válido!")
                 else:
                     conn = sqlite3.connect("agenda_unhas_v2.db")
                     c = conn.cursor()
-                    tel_clean = "".join(filter(str.isdigit, str(telefone)))
                     data_iso = ultimo_atendimento.strftime("%Y-%m-%d")
+
                     c.execute(
-                        """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento) 
+                        "SELECT id FROM clientes_retencao WHERE telefone = ?",
+                        (tel_clean,),
+                    )
+                    existente = c.fetchone()
+
+                    if existente:
+                        c.execute(
+                            """UPDATE clientes_retencao 
+                               SET nome = ?, ciclo_dias = ?, ultimo_atendimento = ? 
+                               WHERE id = ?""",
+                            (nome, ciclo_dias, data_iso, existente[0]),
+                        )
+                        st.success(f"Cadastro de {nome} atualizado no CRM!")
+                    else:
+                        c.execute(
+                            """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento) 
+                               VALUES (?, ?, ?, ?)""",
+                            (nome, tel_clean, ciclo_dias, data_iso),
+                        )
+                        st.success(f"Cliente {nome} salva no CRM!")
+
+                    conn.commit()
+                    conn.close()
+                    st.rerun()
+
+    else:
+        st.header("➕ Nova Anotação / Tarefa")
+        with st.form("form_tarefa", clear_on_submit=True):
+            titulo_t = st.text_input("Título / Lembrete*")
+            desc_t = st.text_area("Detalhes (Opcional)", placeholder="Ex: Comprar acetona e lixas novas")
+            prio_t = st.selectbox("Prioridade", ["Baixa", "Média", "Alta"], index=1)
+
+            salvar_t = st.form_submit_button("Salvar Tarefa")
+
+            if salvar_t:
+                if not titulo_t:
+                    st.error("Preencha o título da tarefa!")
+                else:
+                    conn = sqlite3.connect("agenda_unhas_v2.db")
+                    c = conn.cursor()
+                    c.execute(
+                        """INSERT INTO tarefas (titulo, descricao, prioridade, data_criacao)
                                    VALUES (?, ?, ?, ?)""",
-                        (nome, tel_clean, ciclo_dias, data_iso),
+                        (titulo_t, desc_t, prio_t, str(date.today())),
                     )
                     conn.commit()
                     conn.close()
-                    st.success(f"Cliente {nome} salva no CRM!")
+                    st.success("Anotação salva!")
                     st.rerun()
 
 # --- PAINEL PRINCIPAL ---
 st.title("💅 Studio Maria Rossatto — Sistema de Gestão")
 
-aba_agenda, aba_crm = st.tabs(
-    ["📅 Agenda de Horários", "🎯 Central de Retenção (CRM)"]
+aba_agenda, aba_crm, aba_tarefas, aba_lixeira = st.tabs(
+    [
+        "📅 Agenda de Horários",
+        "🎯 Central de Retenção (CRM)",
+        "📝 Minhas Tarefas",
+        "🗑️ Lixeira (30 dias)",
+    ]
 )
 
 # ==========================================
@@ -289,19 +370,25 @@ with aba_agenda:
 
                     with col_btn2:
                         if st.button(
-                            "🗑️ Excluir", key=f"btn_del_{row['id']}"
+                            "🗑️ Mover p/ Lixeira", key=f"btn_del_{row['id']}"
                         ):
                             conn = sqlite3.connect("agenda_unhas_v2.db")
                             c = conn.cursor()
+                            # Envia cópia para a lixeira antes de apagar
+                            info_str = f"Agendamento: {row['nome_cliente']} | Serviço: {row['servico']} | Data: {row['data_atendimento']} {row['horario']} | Tel: {row['telefone']}"
+                            c.execute(
+                                "INSERT INTO lixeira (tipo_item, dados_item, data_exclusao) VALUES (?, ?, ?)",
+                                ("agendamento", info_str, str(date.today())),
+                            )
                             c.execute(
                                 "DELETE FROM agendamentos WHERE id = ?",
                                 (row["id"],),
                             )
                             conn.commit()
                             conn.close()
+                            st.success("Movido para a Lixeira!")
                             st.rerun()
 
-                    # --- INTEGRAÇÃO AUTOMÁTICA COM O CRM ---
                     st.divider()
                     st.markdown("  **Lançar/Atualizar no CRM de Retenção:**")
                     col_crm1, col_crm2 = st.columns([1, 1])
@@ -313,8 +400,8 @@ with aba_agenda:
                             key=f"ciclo_card_{row['id']}",
                         )
                     with col_crm2:
-                        st.write("") # Espaçamento vertical
-                        st.write("") 
+                        st.write("")
+                        st.write("")
                         if st.button("🔄 Salvar no CRM", key=f"btn_crm_auto_{row['id']}"):
                             if not row["telefone"]:
                                 st.error("Cadastre um WhatsApp para vincular ao CRM!")
@@ -322,24 +409,19 @@ with aba_agenda:
                                 tel_clean = "".join(filter(str.isdigit, str(row["telefone"])))
                                 conn = sqlite3.connect("agenda_unhas_v2.db")
                                 c = conn.cursor()
-                                
-                                # Verifica se a cliente já existe pelo WhatsApp
                                 c.execute("SELECT id FROM clientes_retencao WHERE telefone = ?", (tel_clean,))
                                 cliente_existente = c.fetchone()
-                                
                                 data_atend_iso = str(row["data_atendimento"])
 
                                 if cliente_existente:
-                                    # Atualiza cliente existente com a data do atendimento e o ciclo escolhido
                                     c.execute(
                                         """UPDATE clientes_retencao 
-                                           SET ultimo_atendimento = ?, ciclo_dias = ? 
+                                           SET nome = ?, ultimo_atendimento = ?, ciclo_dias = ? 
                                            WHERE id = ?""",
-                                        (data_atend_iso, ciclo_escolhido, cliente_existente[0]),
+                                        (row["nome_cliente"], data_atend_iso, ciclo_escolhido, cliente_existente[0]),
                                     )
                                     st.success(f"{row['nome_cliente']} atualizada no CRM!")
                                 else:
-                                    # Cria novo registro no CRM
                                     c.execute(
                                         """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento)
                                            VALUES (?, ?, ?, ?)""",
@@ -377,6 +459,17 @@ with aba_crm:
 
         df_crm = df_crm.sort_values(by="dias_para_retorno", ascending=True)
 
+        termo_busca = st.text_input(
+            "🔍 Pesquisar Cliente no CRM:",
+            placeholder="Digite o nome da cliente ou WhatsApp...",
+        )
+
+        if termo_busca:
+            df_crm = df_crm[
+                df_crm["nome"].str.contains(termo_busca, case=False, na=False)
+                | df_crm["telefone"].str.contains(termo_busca, case=False, na=False)
+            ]
+
         hoje = date.today()
         inicio_semana = hoje - timedelta(days=hoje.weekday())
         fim_semana = inicio_semana + timedelta(days=6)
@@ -384,7 +477,7 @@ with aba_crm:
         chamar_semana = df_crm[(df_crm["proximo_atendimento"] <= fim_semana)]
 
         col_m1, col_m2, col_m3 = st.columns(3)
-        col_m1.metric(" Total Clientes no CRM", len(df_crm))
+        col_m1.metric(" Total Clientes Filtradas", len(df_crm))
         col_m2.metric(
             "📲 Chamar Esta Semana",
             len(chamar_semana),
@@ -402,7 +495,7 @@ with aba_crm:
         with sub_aba1:
             st.subheader("🎯 Clientes para chamar esta semana")
             if chamar_semana.empty:
-                st.success("🎉 Nenhuma cliente pendente para chamar esta semana!")
+                st.success("🎉 Nenhuma cliente pendente para chamar esta semana com o filtro aplicado!")
             else:
                 cols_crm = st.columns(2)
                 for idx, row in chamar_semana.reset_index().iterrows():
@@ -506,19 +599,119 @@ with aba_crm:
 
                     with col_e2:
                         if st.button(
-                            "🗑️ Excluir Cliente", key=f"del_{row['id']}"
+                            "🗑️ Mover p/ Lixeira", key=f"del_{row['id']}"
                         ):
                             conn = sqlite3.connect("agenda_unhas_v2.db")
                             c = conn.cursor()
+                            info_str = f"Cliente CRM: {row['nome']} | Tel: {row['telefone']} | Ciclo: {row['ciclo_dias']} dias | Último Atend: {row['ultimo_atendimento']}"
+                            c.execute(
+                                "INSERT INTO lixeira (tipo_item, dados_item, data_exclusao) VALUES (?, ?, ?)",
+                                ("crm", info_str, str(date.today())),
+                            )
                             c.execute(
                                 "DELETE FROM clientes_retencao WHERE id = ?",
                                 (row["id"],),
                             )
                             conn.commit()
                             conn.close()
+                            st.success("Movida para a Lixeira!")
                             st.rerun()
 
     else:
         st.info(
             "Nenhuma cliente cadastrada no CRM ainda. Use a barra lateral para cadastrar!"
         )
+
+# ==========================================
+# ABA 3: MINHAS TAREFAS / ANOTAÇÕES
+# ==========================================
+with aba_tarefas:
+    st.subheader("📝 Bloco de Notas & Tarefas do Estúdio")
+
+    conn = sqlite3.connect("agenda_unhas_v2.db")
+    df_t = pd.read_sql_query("SELECT * FROM tarefas ORDER BY concluido ASC, id DESC", conn)
+    conn.close()
+
+    if df_t.empty:
+        st.info("Nenhuma tarefa ou anotação cadastrada. Use a barra lateral para criar a primeira!")
+    else:
+        for idx, row in df_t.iterrows():
+            with st.container(border=True):
+                col_t1, col_t2, col_t3 = st.columns([3, 1, 1])
+
+                with col_t1:
+                    status_prefix = "✅ " if row["concluido"] else "📌 "
+                    st.markdown(f"### {status_prefix} {row['titulo']}")
+                    if row["descricao"]:
+                        st.write(f"**Detalhes:** {row['descricao']}")
+                    st.caption(f"Criado em: {row['data_criacao']}")
+
+                with col_t2:
+                    prio_color = (
+                        "🔴 Alta"
+                        if row["prioridade"] == "Alta"
+                        else ("🟡 Média" if row["prioridade"] == "Média" else "🟢 Baixa")
+                    )
+                    st.write(f"**Prioridade:** {prio_color}")
+
+                with col_t3:
+                    if not row["concluido"]:
+                        if st.button("✔ Concluir", key=f"done_t_{row['id']}"):
+                            conn = sqlite3.connect("agenda_unhas_v2.db")
+                            c = conn.cursor()
+                            c.execute("UPDATE tarefas SET concluido = 1 WHERE id = ?", (row["id"],))
+                            conn.commit()
+                            conn.close()
+                            st.rerun()
+
+                    if st.button("🗑️ Mover p/ Lixeira", key=f"del_t_{row['id']}"):
+                        conn = sqlite3.connect("agenda_unhas_v2.db")
+                        c = conn.cursor()
+                        info_str = f"Tarefa: {row['titulo']} | Detalhes: {row['descricao']} | Prioridade: {row['prioridade']}"
+                        c.execute(
+                            "INSERT INTO lixeira (tipo_item, dados_item, data_exclusao) VALUES (?, ?, ?)",
+                            ("tarefa", info_str, str(date.today())),
+                        )
+                        c.execute("DELETE FROM tarefas WHERE id = ?", (row["id"],))
+                        conn.commit()
+                        conn.close()
+                        st.success("Movido para a Lixeira!")
+                        st.rerun()
+
+# ==========================================
+# ABA 4: LIXEIRA INTELIGENTE (RETENÇÃO DE 30 DIAS)
+# ==========================================
+with aba_lixeira:
+    st.subheader("🗑️ Lixeira (Itens excluídos são apagados permanentemente após 30 dias)")
+
+    conn = sqlite3.connect("agenda_unhas_v2.db")
+    df_lix = pd.read_sql_query("SELECT * FROM lixeira ORDER BY id DESC", conn)
+    conn.close()
+
+    if df_lix.empty:
+        st.success("🎉 A lixeira está limpa! Nenhum item excluído no momento.")
+    else:
+        for idx, row in df_lix.iterrows():
+            with st.container(border=True):
+                col_lx1, col_lx2 = st.columns([4, 1])
+
+                with col_lx1:
+                    data_exc = pd.to_datetime(row["data_exclusao"]).date()
+                    dias_na_lixeira = (date.today() - data_exc).days
+                    dias_restantes = 30 - dias_na_lixeira
+
+                    st.markdown(f"**Tipo:** `{row['tipo_item'].upper()}`")
+                    st.write(f"📄 **Conteúdo:** {row['dados_item']}")
+                    st.caption(
+                        f"Excluído em: {data_exc.strftime('%d/%m/%Y')} | ⏳ Será apagado em {dias_restantes} dia(s)"
+                    )
+
+                with col_lx2:
+                    if st.button("🗑️ Excluir Agora", key=f"perm_del_{row['id']}"):
+                        conn = sqlite3.connect("agenda_unhas_v2.db")
+                        c = conn.cursor()
+                        c.execute("DELETE FROM lixeira WHERE id = ?", (row["id"],))
+                        conn.commit()
+                        conn.close()
+                        st.success("Apagado permanentemente!")
+                        st.rerun()
