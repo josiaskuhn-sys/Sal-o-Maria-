@@ -139,10 +139,11 @@ with st.sidebar:
                     conn = sqlite3.connect("agenda_unhas_v2.db")
                     c = conn.cursor()
                     tel_clean = "".join(filter(str.isdigit, str(telefone)))
+                    data_iso = ultimo_atendimento.strftime("%Y-%m-%d")
                     c.execute(
                         """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento) 
                                    VALUES (?, ?, ?, ?)""",
-                        (nome, tel_clean, ciclo_dias, str(ultimo_atendimento)),
+                        (nome, tel_clean, ciclo_dias, data_iso),
                     )
                     conn.commit()
                     conn.close()
@@ -299,11 +300,61 @@ with aba_agenda:
                             conn.commit()
                             conn.close()
                             st.rerun()
+
+                    # --- INTEGRAÇÃO AUTOMÁTICA COM O CRM ---
+                    st.divider()
+                    st.markdown("  **Lançar/Atualizar no CRM de Retenção:**")
+                    col_crm1, col_crm2 = st.columns([1, 1])
+                    with col_crm1:
+                        ciclo_escolhido = st.selectbox(
+                            "Ciclo de Retorno:",
+                            [15, 21, 25, 30],
+                            index=1,
+                            key=f"ciclo_card_{row['id']}",
+                        )
+                    with col_crm2:
+                        st.write("") # Espaçamento vertical
+                        st.write("") 
+                        if st.button("🔄 Salvar no CRM", key=f"btn_crm_auto_{row['id']}"):
+                            if not row["telefone"]:
+                                st.error("Cadastre um WhatsApp para vincular ao CRM!")
+                            else:
+                                tel_clean = "".join(filter(str.isdigit, str(row["telefone"])))
+                                conn = sqlite3.connect("agenda_unhas_v2.db")
+                                c = conn.cursor()
+                                
+                                # Verifica se a cliente já existe pelo WhatsApp
+                                c.execute("SELECT id FROM clientes_retencao WHERE telefone = ?", (tel_clean,))
+                                cliente_existente = c.fetchone()
+                                
+                                data_atend_iso = str(row["data_atendimento"])
+
+                                if cliente_existente:
+                                    # Atualiza cliente existente com a data do atendimento e o ciclo escolhido
+                                    c.execute(
+                                        """UPDATE clientes_retencao 
+                                           SET ultimo_atendimento = ?, ciclo_dias = ? 
+                                           WHERE id = ?""",
+                                        (data_atend_iso, ciclo_escolhido, cliente_existente[0]),
+                                    )
+                                    st.success(f"{row['nome_cliente']} atualizada no CRM!")
+                                else:
+                                    # Cria novo registro no CRM
+                                    c.execute(
+                                        """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento)
+                                           VALUES (?, ?, ?, ?)""",
+                                        (row["nome_cliente"], tel_clean, ciclo_escolhido, data_atend_iso),
+                                    )
+                                    st.success(f"{row['nome_cliente']} cadastrada no CRM!")
+
+                                conn.commit()
+                                conn.close()
+                                st.rerun()
     else:
         st.info("Nenhum atendimento marcado para este dia.")
 
 # ==========================================
-# ABA 2: CENTRAL DE RETENÇÃO (CRM COM SUB-ABAS)
+# ABA 2: CENTRAL DE RETENÇÃO (CRM)
 # ==========================================
 with aba_crm:
     conn = sqlite3.connect("agenda_unhas_v2.db")
@@ -312,8 +363,9 @@ with aba_crm:
 
     if not df_crm.empty:
         df_crm["ultimo_atendimento"] = pd.to_datetime(
-            df_crm["ultimo_atendimento"]
+            df_crm["ultimo_atendimento"], errors="coerce"
         ).dt.date
+
         df_crm["proximo_atendimento"] = df_crm.apply(
             lambda r: r["ultimo_atendimento"]
             + timedelta(days=int(r["ciclo_dias"])),
@@ -323,7 +375,6 @@ with aba_crm:
             lambda d: (d - date.today()).days
         )
 
-        # Ordena: Mais urgentes primeiro
         df_crm = df_crm.sort_values(by="dias_para_retorno", ascending=True)
 
         hoje = date.today()
@@ -332,7 +383,6 @@ with aba_crm:
 
         chamar_semana = df_crm[(df_crm["proximo_atendimento"] <= fim_semana)]
 
-        # Métricas topo
         col_m1, col_m2, col_m3 = st.columns(3)
         col_m1.metric(" Total Clientes no CRM", len(df_crm))
         col_m2.metric(
@@ -349,7 +399,6 @@ with aba_crm:
             ["📲 Chamar Esta Semana", "📋 Todas as Clientes & Próximos Vencimentos"]
         )
 
-        # SUB-ABA 1: SEMANA ATUAL
         with sub_aba1:
             st.subheader("🎯 Clientes para chamar esta semana")
             if chamar_semana.empty:
@@ -407,15 +456,15 @@ with aba_crm:
                                 ):
                                     conn = sqlite3.connect("agenda_unhas_v2.db")
                                     c = conn.cursor()
+                                    data_hoje = date.today().strftime("%Y-%m-%d")
                                     c.execute(
                                         "UPDATE clientes_retencao SET ultimo_atendimento = ? WHERE id = ?",
-                                        (str(date.today()), row["id"]),
+                                        (data_hoje, row["id"]),
                                     )
                                     conn.commit()
                                     conn.close()
                                     st.rerun()
 
-        # SUB-ABA 2: BANCO GERAL E PRÓXIMOS DIAS
         with sub_aba2:
             st.subheader("📋 Banco Geral de Clientes")
             for idx, row in df_crm.iterrows():
@@ -446,9 +495,10 @@ with aba_crm:
                         ):
                             conn = sqlite3.connect("agenda_unhas_v2.db")
                             c = conn.cursor()
+                            data_hoje = date.today().strftime("%Y-%m-%d")
                             c.execute(
                                 "UPDATE clientes_retencao SET ultimo_atendimento = ? WHERE id = ?",
-                                (str(date.today()), row["id"]),
+                                (data_hoje, row["id"]),
                             )
                             conn.commit()
                             conn.close()
