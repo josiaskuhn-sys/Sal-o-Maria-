@@ -4,19 +4,6 @@ import pandas as pd
 import streamlit as st
 from streamlit_calendar import calendar
 
-# Configuração da página
-st.set_page_config(
-    page_title="Studio Maria Rossatto - Agenda & CRM",
-    layout="wide",
-    page_icon="💅",
-)
-
-# --- BLOQUEIO ANTI-TRADUÇÃO ---
-st.markdown(
-    '<meta name="google" content="notranslate">', unsafe_allow_html=True
-)
-
-
 # --- BANCO DE DADOS & LIXEIRA ---
 def init_db():
     conn = sqlite3.connect("agenda_unhas_v2.db")
@@ -64,19 +51,35 @@ def init_db():
     """
     )
 
-    # Tabela 4: Lixeira Inteligente (Guarda tipo, dados originais em JSON e data da deleção)
+    # Tabela 4: Lixeira Inteligente
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS lixeira (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tipo_item TEXT NOT NULL, -- 'agendamento', 'crm', 'tarefa'
-            dados_item TEXT NOT NULL, -- formato de texto/dados
+            tipo_item TEXT NOT NULL,
+            dados_item TEXT NOT NULL,
             data_exclusao DATE NOT NULL
         )
     """
     )
 
-    # --- AUTO-DELETE DA LIXEIRA (Apaga itens com mais de 30 dias) ---
+    # Tabela 5: Configurações Editáveis
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS configuracoes (
+            chave TEXT PRIMARY KEY,
+            valor TEXT NOT NULL
+        )
+    """
+    )
+
+    # Valores padrão iniciais (se não existirem)
+    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('titulo_studio', 'Studio Maria Rossatto')")
+    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('subtitulo_studio', 'Sistema de Gestão & Retenção')")
+    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('whatsapp_studio', '5554991341375')")
+    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('tema_estilo', 'Nude / Rosé')")
+
+    # Auto-delete da lixeira (mais de 30 dias)
     limite_30_dias = str(date.today() - timedelta(days=30))
     c.execute("DELETE FROM lixeira WHERE data_exclusao < ?", (limite_30_dias,))
 
@@ -85,6 +88,67 @@ def init_db():
 
 
 init_db()
+
+# --- FUNÇÃO PARA BUSCAR CONFIGURAÇÕES ---
+def get_config(chave):
+    conn = sqlite3.connect("agenda_unhas_v2.db")
+    c = conn.cursor()
+    c.execute("SELECT valor FROM configuracoes WHERE chave = ?", (chave,))
+    row = c.fetchone()
+    conn.close()
+    return row[0] if row else ""
+
+# Configuração da página
+st.set_page_config(
+    page_title=get_config("titulo_studio"),
+    layout="wide",
+    page_icon="💅",
+)
+
+# --- APLICAÇÃO DE TEMAS DINÂMICOS (CSS) ---
+tema_atual = get_config("tema_estilo")
+
+estilos_css = {
+    "Nude / Rosé": """
+        <style>
+            .stApp { background-color: #FFF9F9; color: #4A3E3D; }
+            .stSidebar { background-color: #FFF0F2; }
+            .stButton>button { background-color: #E8A5A5 !important; color: white !important; border-radius: 8px !important; border: none !important; }
+            div[data-testid="stMetricValue"] { color: #D87070 !important; }
+        </style>
+    """,
+    "Dark Elegance": """
+        <style>
+            .stApp { background-color: #121212; color: #E0E0E0; }
+            .stSidebar { background-color: #1E1E1E; }
+            .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; }
+            div[data-testid="stMetricValue"] { color: #BB86FC !important; }
+        </style>
+    """,
+    "Lavanda / Soft Purple": """
+        <style>
+            .stApp { background-color: #F8F7FF; color: #3A354A; }
+            .stSidebar { background-color: #EDE9FE; }
+            .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; }
+            div[data-testid="stMetricValue"] { color: #7C3AED !important; }
+        </style>
+    """,
+    "Nude / Minimalista": """
+        <style>
+            .stApp { background-color: #FAF8F5; color: #3D3B37; }
+            .stSidebar { background-color: #F0ECE1; }
+            .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; }
+            div[data-testid="stMetricValue"] { color: #A37E38 !important; }
+        </style>
+    """,
+}
+
+st.markdown(estilos_css.get(tema_atual, estilos_css["Nude / Rosé"]), unsafe_allow_html=True)
+
+# --- BLOQUEIO ANTI-TRADUÇÃO ---
+st.markdown(
+    '<meta name="google" content="notranslate">', unsafe_allow_html=True
+)
 
 # --- BARRA LATERAL ---
 with st.sidebar:
@@ -226,15 +290,19 @@ with st.sidebar:
                     st.success("Anotação salva!")
                     st.rerun()
 
-# --- PAINEL PRINCIPAL ---
-st.title("💅 Studio Maria Rossatto — Sistema de Gestão")
+# --- PAINEL PRINCIPAL (TÍTULO DINÂMICO) ---
+titulo_atual = get_config("titulo_studio")
+subtitulo_atual = get_config("subtitulo_studio")
 
-aba_agenda, aba_crm, aba_tarefas, aba_lixeira = st.tabs(
+st.title(f"💅 {titulo_atual} — {subtitulo_atual}")
+
+aba_agenda, aba_crm, aba_tarefas, aba_lixeira, aba_config = st.tabs(
     [
         "📅 Agenda de Horários",
         "🎯 Central de Retenção (CRM)",
         "📝 Minhas Tarefas",
         "🗑️ Lixeira (30 dias)",
+        "⚙️ Configurações & Estilo",
     ]
 )
 
@@ -306,7 +374,7 @@ with aba_agenda:
         for _, row in df.iterrows():
             texto_resumo += f"⏰ *{row['horario']}* — {row['nome_cliente']} ({row['servico']})\n"
 
-        numero_whatsapp = "5554991341375"
+        numero_whatsapp = get_config("whatsapp_studio")
         link_resumo = f"https://wa.me/{numero_whatsapp}?text={texto_resumo.replace(' ', '%20').replace('\n', '%0A')}"
 
         st.markdown(
@@ -374,7 +442,6 @@ with aba_agenda:
                         ):
                             conn = sqlite3.connect("agenda_unhas_v2.db")
                             c = conn.cursor()
-                            # Envia cópia para a lixeira antes de apagar
                             info_str = f"Agendamento: {row['nome_cliente']} | Serviço: {row['servico']} | Data: {row['data_atendimento']} {row['horario']} | Tel: {row['telefone']}"
                             c.execute(
                                 "INSERT INTO lixeira (tipo_item, dados_item, data_exclusao) VALUES (?, ?, ?)",
@@ -461,14 +528,69 @@ with aba_crm:
 
         termo_busca = st.text_input(
             "🔍 Pesquisar Cliente no CRM:",
-            placeholder="Digite o nome da cliente ou WhatsApp...",
+            placeholder="Digite o nome da cliente ou WhatsApp e pressione Enter...",
         )
 
         if termo_busca:
-            df_crm = df_crm[
+            resultados_busca = df_crm[
                 df_crm["nome"].str.contains(termo_busca, case=False, na=False)
                 | df_crm["telefone"].str.contains(termo_busca, case=False, na=False)
             ]
+
+            st.markdown(f"### 🔎 Resultado da busca para: *'{termo_busca}'*")
+            if resultados_busca.empty:
+                st.warning("Nenhuma cliente encontrada com esse nome ou número.")
+            else:
+                for _, row in resultados_busca.iterrows():
+                    dias_texto = (
+                        f"⚠️ Atrasada há {abs(row['dias_para_retorno'])} dias"
+                        if row["dias_para_retorno"] < 0
+                        else (
+                            "⏰ Vence HOJE"
+                            if row["dias_para_retorno"] == 0
+                            else f"⏳ Vence em {row['dias_para_retorno']} dias"
+                        )
+                    )
+                    with st.container(border=True):
+                        st.markdown(f"### 👤 {row['nome']} — {dias_texto}")
+                        st.write(f"📱 **WhatsApp:** {row['telefone']}")
+                        st.write(f"🔁 **Ciclo:** A cada {row['ciclo_dias']} dias")
+                        st.write(f"🗓️ **Último Atendimento:** {row['ultimo_atendimento'].strftime('%d/%m/%Y')}")
+                        st.write(f"🎯 **Previsão de Retorno:** {row['proximo_atendimento'].strftime('%d/%m/%Y')}")
+
+                        msg = (
+                            f"Oi {row['nome']}! Tudo bem? 💅 "
+                            f"Passando para avisar que já deu o prazo da sua manutenção essa semana! "
+                            f"Como está sua agenda para a gente encaixar o seu horário no planner?"
+                        )
+                        link_wa = f"https://wa.me/55{row['telefone']}?text={msg.replace(' ', '%20')}"
+
+                        col_sb1, col_sb2 = st.columns(2)
+                        with col_sb1:
+                            st.markdown(
+                                f"""
+                                <a href="{link_wa}" target="_blank">
+                                    <button style="background-color: #25D366; color: white; padding: 8px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%;">
+                                        💬 Chamada no WhatsApp
+                                    </button>
+                                </a>
+                            """,
+                                unsafe_allow_html=True,
+                            )
+                        with col_sb2:
+                            if st.button("🔄 Renovou Hoje", key=f"renovar_busca_{row['id']}"):
+                                conn = sqlite3.connect("agenda_unhas_v2.db")
+                                c = conn.cursor()
+                                data_hoje = date.today().strftime("%Y-%m-%d")
+                                c.execute(
+                                    "UPDATE clientes_retencao SET ultimo_atendimento = ? WHERE id = ?",
+                                    (data_hoje, row["id"]),
+                                )
+                                conn.commit()
+                                conn.close()
+                                st.rerun()
+
+            st.divider()
 
         hoje = date.today()
         inicio_semana = hoje - timedelta(days=hoje.weekday())
@@ -477,7 +599,7 @@ with aba_crm:
         chamar_semana = df_crm[(df_crm["proximo_atendimento"] <= fim_semana)]
 
         col_m1, col_m2, col_m3 = st.columns(3)
-        col_m1.metric(" Total Clientes Filtradas", len(df_crm))
+        col_m1.metric(" Total Clientes no CRM", len(df_crm))
         col_m2.metric(
             "📲 Chamar Esta Semana",
             len(chamar_semana),
@@ -495,7 +617,7 @@ with aba_crm:
         with sub_aba1:
             st.subheader("🎯 Clientes para chamar esta semana")
             if chamar_semana.empty:
-                st.success("🎉 Nenhuma cliente pendente para chamar esta semana com o filtro aplicado!")
+                st.success("🎉 Nenhuma cliente pendente para chamar esta semana!")
             else:
                 cols_crm = st.columns(2)
                 for idx, row in chamar_semana.reset_index().iterrows():
@@ -626,7 +748,7 @@ with aba_crm:
 # ABA 3: MINHAS TAREFAS / ANOTAÇÕES
 # ==========================================
 with aba_tarefas:
-    st.subheader("📝 Bloco de Notas & Tarefas do Estúdio")
+    st.subheader(f"📝 Bloco de Notas & Tarefas do {titulo_atual}")
 
     conn = sqlite3.connect("agenda_unhas_v2.db")
     df_t = pd.read_sql_query("SELECT * FROM tarefas ORDER BY concluido ASC, id DESC", conn)
@@ -679,7 +801,7 @@ with aba_tarefas:
                         st.rerun()
 
 # ==========================================
-# ABA 4: LIXEIRA INTELIGENTE (RETENÇÃO DE 30 DIAS)
+# ABA 4: LIXEIRA INTELIGENTE (30 DIAS)
 # ==========================================
 with aba_lixeira:
     st.subheader("🗑️ Lixeira (Itens excluídos são apagados permanentemente após 30 dias)")
@@ -715,3 +837,34 @@ with aba_lixeira:
                         conn.close()
                         st.success("Apagado permanentemente!")
                         st.rerun()
+
+# ==========================================
+# ABA 5: CONFIGURAÇÕES & TEMA VISUAL
+# ==========================================
+with aba_config:
+    st.subheader("⚙️ Configurações de Nome, Contato e Aparência do Studio")
+    st.write("Altere as informações e as cores do aplicativo a qualquer momento.")
+
+    with st.form("form_config_studio"):
+        novo_titulo = st.text_input("Nome do Studio / Empresa:", value=titulo_atual)
+        novo_subtitulo = st.text_input("Subtítulo / Descrição:", value=subtitulo_atual)
+        novo_wa_padrao = st.text_input("WhatsApp Principal (para receber a lista do dia):", value=get_config("whatsapp_studio"))
+
+        # SELETOR DE TEMAS VISUAIS
+        temas_disponiveis = ["Nude / Rosé", "Dark Elegance", "Lavanda / Soft Purple", "Nude / Minimalista"]
+        index_tema = temas_disponiveis.index(tema_atual) if tema_atual in temas_disponiveis else 0
+        novo_tema = st.selectbox("🎨 Tema Visual de Cores:", temas_disponiveis, index=index_tema)
+
+        btn_salvar_config = st.form_submit_button("💾 Salvar Configurações e Cores")
+
+        if btn_salvar_config:
+            conn = sqlite3.connect("agenda_unhas_v2.db")
+            c = conn.cursor()
+            c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'titulo_studio'", (novo_titulo,))
+            c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'subtitulo_studio'", (novo_subtitulo,))
+            c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'whatsapp_studio'", ("".join(filter(str.isdigit, novo_wa_padrao)),))
+            c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'tema_estilo'", (novo_tema,))
+            conn.commit()
+            conn.close()
+            st.success("Configurações e cores salvas com sucesso!")
+            st.rerun()
