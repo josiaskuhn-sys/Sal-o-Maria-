@@ -22,7 +22,7 @@ def init_db():
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
 
-    # Tabela 1: Agendamentos por Horário (Agenda Antiga)
+    # Tabela 1: Agendamentos por Horário
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS agendamentos (
@@ -37,7 +37,7 @@ def init_db():
     """
     )
 
-    # Tabela 2: Clientes e Ciclos (CRM Novo)
+    # Tabela 2: Clientes e Ciclos (CRM)
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS clientes_retencao (
@@ -56,7 +56,7 @@ def init_db():
 
 init_db()
 
-# --- BARRA LATERAL (FOTO E NAVEGAÇÃO DE CADASTRO) ---
+# --- BARRA LATERAL ---
 with st.sidebar:
     st.image("logo.JPG", use_container_width=True)
 
@@ -149,7 +149,7 @@ with st.sidebar:
                     st.success(f"Cliente {nome} salva no CRM!")
                     st.rerun()
 
-# --- PAINEL PRINCIPAL COM ABAS ---
+# --- PAINEL PRINCIPAL ---
 st.title("💅 Studio Maria Rossatto — Sistema de Gestão")
 
 aba_agenda, aba_crm = st.tabs(
@@ -157,7 +157,7 @@ aba_agenda, aba_crm = st.tabs(
 )
 
 # ==========================================
-# ABA 1: AGENDA COMPLETA (CÓDIGO ORIGINAL)
+# ABA 1: AGENDA DE HORÁRIOS
 # ==========================================
 with aba_agenda:
     conn = sqlite3.connect("agenda_unhas_v2.db")
@@ -303,7 +303,7 @@ with aba_agenda:
         st.info("Nenhum atendimento marcado para este dia.")
 
 # ==========================================
-# ABA 2: CENTRAL DE RETENÇÃO (CRM NOVO)
+# ABA 2: CENTRAL DE RETENÇÃO (CRM COM SUB-ABAS)
 # ==========================================
 with aba_crm:
     conn = sqlite3.connect("agenda_unhas_v2.db")
@@ -322,6 +322,8 @@ with aba_crm:
         df_crm["dias_para_retorno"] = df_crm["proximo_atendimento"].apply(
             lambda d: (d - date.today()).days
         )
+
+        # Ordena: Mais urgentes primeiro
         df_crm = df_crm.sort_values(by="dias_para_retorno", ascending=True)
 
         hoje = date.today()
@@ -330,6 +332,7 @@ with aba_crm:
 
         chamar_semana = df_crm[(df_crm["proximo_atendimento"] <= fim_semana)]
 
+        # Métricas topo
         col_m1, col_m2, col_m3 = st.columns(3)
         col_m1.metric(" Total Clientes no CRM", len(df_crm))
         col_m2.metric(
@@ -342,69 +345,129 @@ with aba_crm:
 
         st.divider()
 
-        st.subheader("🎯 Clientes para chamar esta semana")
-        if chamar_semana.empty:
-            st.success("🎉 Nenhuma cliente pendente para chamar esta semana!")
-        else:
-            cols_crm = st.columns(2)
-            for idx, row in chamar_semana.reset_index().iterrows():
-                col_curr = cols_crm[idx % 2]
-                with col_curr:
-                    with st.container(border=True):
-                        st.markdown(f"### 👤 {row['nome']}")
-                        st.write(
-                            f"🔁 **Ciclo:** A cada {row['ciclo_dias']} dias"
-                        )
-                        st.write(
-                            f"📅 **Último atendimento:** {row['ultimo_atendimento'].strftime('%d/%m/%Y')}"
-                        )
-                        st.write(
-                            f"🎯 **Previsão de Retorno:** {row['proximo_atendimento'].strftime('%d/%m/%Y')}"
-                        )
+        sub_aba1, sub_aba2 = st.tabs(
+            ["📲 Chamar Esta Semana", "📋 Todas as Clientes & Próximos Vencimentos"]
+        )
 
-                        if row["dias_para_retorno"] < 0:
-                            st.error(
-                                f"⚠️ Atrasada há {abs(row['dias_para_retorno'])} dia(s)!"
+        # SUB-ABA 1: SEMANA ATUAL
+        with sub_aba1:
+            st.subheader("🎯 Clientes para chamar esta semana")
+            if chamar_semana.empty:
+                st.success("🎉 Nenhuma cliente pendente para chamar esta semana!")
+            else:
+                cols_crm = st.columns(2)
+                for idx, row in chamar_semana.reset_index().iterrows():
+                    col_curr = cols_crm[idx % 2]
+                    with col_curr:
+                        with st.container(border=True):
+                            st.markdown(f"### 👤 {row['nome']}")
+                            st.write(
+                                f"🔁 **Ciclo:** A cada {row['ciclo_dias']} dias"
                             )
-                        elif row["dias_para_retorno"] == 0:
-                            st.warning("⏰ Vence HOJE!")
-                        else:
-                            st.info(
-                                f"⏳ Vence em {row['dias_para_retorno']} dia(s)"
+                            st.write(
+                                f"📅 **Último atendimento:** {row['ultimo_atendimento'].strftime('%d/%m/%Y')}"
+                            )
+                            st.write(
+                                f"🎯 **Previsão de Retorno:** {row['proximo_atendimento'].strftime('%d/%m/%Y')}"
                             )
 
-                        msg = (
-                            f"Oi {row['nome']}! Tudo bem? 💅 "
-                            f"Passando para avisar que já deu o prazo da sua manutenção essa semana! "
-                            f"Como está sua agenda para a gente encaixar o seu horário no planner?"
-                        )
-                        link_wa = f"https://wa.me/55{row['telefone']}?text={msg.replace(' ', '%20')}"
-
-                        col_b1, col_b2 = st.columns(2)
-                        with col_b1:
-                            st.markdown(
-                                f"""
-                                <a href="{link_wa}" target="_blank">
-                                    <button style="background-color: #25D366; color: white; padding: 8px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%;">
-                                        💬 WhatsApp
-                                    </button>
-                                </a>
-                            """,
-                                unsafe_allow_html=True,
-                            )
-                        with col_b2:
-                            if st.button(
-                                "✅ Atendido Hoje", key=f"renovar_{row['id']}"
-                            ):
-                                conn = sqlite3.connect("agenda_unhas_v2.db")
-                                c = conn.cursor()
-                                c.execute(
-                                    "UPDATE clientes_retencao SET ultimo_atendimento = ? WHERE id = ?",
-                                    (str(date.today()), row["id"]),
+                            if row["dias_para_retorno"] < 0:
+                                st.error(
+                                    f"⚠️ Atrasada há {abs(row['dias_para_retorno'])} dia(s)!"
                                 )
-                                conn.commit()
-                                conn.close()
-                                st.rerun()
+                            elif row["dias_para_retorno"] == 0:
+                                st.warning("⏰ Vence HOJE!")
+                            else:
+                                st.info(
+                                    f"⏳ Vence em {row['dias_para_retorno']} dia(s)"
+                                )
+
+                            msg = (
+                                f"Oi {row['nome']}! Tudo bem? 💅 "
+                                f"Passando para avisar que já deu o prazo da sua manutenção essa semana! "
+                                f"Como está sua agenda para a gente encaixar o seu horário no planner?"
+                            )
+                            link_wa = f"https://wa.me/55{row['telefone']}?text={msg.replace(' ', '%20')}"
+
+                            col_b1, col_b2 = st.columns(2)
+                            with col_b1:
+                                st.markdown(
+                                    f"""
+                                    <a href="{link_wa}" target="_blank">
+                                        <button style="background-color: #25D366; color: white; padding: 8px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%;">
+                                            💬 WhatsApp
+                                        </button>
+                                    </a>
+                                """,
+                                    unsafe_allow_html=True,
+                                )
+                            with col_b2:
+                                if st.button(
+                                    "✅ Atendido Hoje", key=f"renovar_{row['id']}"
+                                ):
+                                    conn = sqlite3.connect("agenda_unhas_v2.db")
+                                    c = conn.cursor()
+                                    c.execute(
+                                        "UPDATE clientes_retencao SET ultimo_atendimento = ? WHERE id = ?",
+                                        (str(date.today()), row["id"]),
+                                    )
+                                    conn.commit()
+                                    conn.close()
+                                    st.rerun()
+
+        # SUB-ABA 2: BANCO GERAL E PRÓXIMOS DIAS
+        with sub_aba2:
+            st.subheader("📋 Banco Geral de Clientes")
+            for idx, row in df_crm.iterrows():
+                dias_texto = (
+                    f"⚠️ Atrasada há {abs(row['dias_para_retorno'])} dias"
+                    if row["dias_para_retorno"] < 0
+                    else (
+                        "⏰ Vence HOJE"
+                        if row["dias_para_retorno"] == 0
+                        else f"⏳ Vence em {row['dias_para_retorno']} dias"
+                    )
+                )
+
+                with st.expander(
+                    f"👤 {row['nome']} — {dias_texto} (Previsão: {row['proximo_atendimento'].strftime('%d/%m/%Y')})"
+                ):
+                    st.write(f"📱 **WhatsApp:** {row['telefone']}")
+                    st.write(f"🔁 **Ciclo:** {row['ciclo_dias']} dias")
+                    st.write(
+                        f"🗓️ **Último Atendimento:** {row['ultimo_atendimento'].strftime('%d/%m/%Y')}"
+                    )
+
+                    col_e1, col_e2 = st.columns(2)
+                    with col_e1:
+                        if st.button(
+                            "🔄 Renovou Atendimento Hoje",
+                            key=f"renovar_geral_{row['id']}",
+                        ):
+                            conn = sqlite3.connect("agenda_unhas_v2.db")
+                            c = conn.cursor()
+                            c.execute(
+                                "UPDATE clientes_retencao SET ultimo_atendimento = ? WHERE id = ?",
+                                (str(date.today()), row["id"]),
+                            )
+                            conn.commit()
+                            conn.close()
+                            st.rerun()
+
+                    with col_e2:
+                        if st.button(
+                            "🗑️ Excluir Cliente", key=f"del_{row['id']}"
+                        ):
+                            conn = sqlite3.connect("agenda_unhas_v2.db")
+                            c = conn.cursor()
+                            c.execute(
+                                "DELETE FROM clientes_retencao WHERE id = ?",
+                                (row["id"],),
+                            )
+                            conn.commit()
+                            conn.close()
+                            st.rerun()
+
     else:
         st.info(
             "Nenhuma cliente cadastrada no CRM ainda. Use a barra lateral para cadastrar!"
