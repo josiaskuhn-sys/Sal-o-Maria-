@@ -849,10 +849,10 @@ with aba_lixeira:
                         st.rerun()
 
 # ==========================================
-# ABA 5: CONFIGURAÇÕES & TEMA VISUAL
+# ABA 5: CONFIGURAÇÕES, TEMA E BACKUP
 # ==========================================
 with aba_config:
-    st.subheader("⚙️ Configurações de Nome, Contato e Aparência do Studio")
+    st.subheader("⚙️ Configurações de Nome, Contato e Aparência")
     st.write("Altere as informações e as cores do aplicativo a qualquer momento.")
 
     with st.form("form_config_studio"):
@@ -884,3 +884,21 @@ with aba_config:
             conn.close()
             st.success("Configurações e cores salvas com sucesso!")
             st.rerun()
+
+    # --- NOVA SEÇÃO DE BACKUP SEGURO ---
+    st.divider()
+    st.subheader("🛡️ Backup e Segurança de Dados")
+    st.warning("⚠️ **Atenção:** Como o sistema roda na nuvem, sempre que você for atualizar o código ou reiniciar o app, **BAIXE O BACKUP** primeiro para não perder suas clientes!")
+    
+    try:
+        with open("agenda_unhas_v2.db", "rb") as db_file:
+            dados_banco = db_file.read()
+            st.download_button(
+                label="📥 Fazer Download do Backup (Banco de Dados)",
+                data=dados_banco,
+                file_name=f"backup_studio_{date.today().strftime('%d-%m-%Y')}.db",
+                mime="application/octet-stream",
+                help="Clique aqui para salvar o arquivo de banco de dados no seu computador."
+            )
+    except Exception as e:
+        st.error("O banco de dados ainda não foi criado ou ocorreu um erro na leitura.")
