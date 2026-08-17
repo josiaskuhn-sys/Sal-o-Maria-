@@ -394,34 +394,50 @@ subtitulo_atual = get_config("subtitulo_studio")
 
 st.title(f"💅 {titulo_atual} — Painel da {usuario_atual}")
 
-# --- CENTRAL DE ALERTAS (INBOX) ---
+# --- CENTRAL DE ALERTAS COM NOMES ---
 conn = sqlite3.connect("agenda_unhas_v2.db")
 hoje_str = date.today().isoformat()
 
 df_agenda_hoje = pd.read_sql_query(
-    "SELECT * FROM agendamentos WHERE data_atendimento = ? AND profissional = ?", 
+    "SELECT horario, nome_cliente, servico FROM agendamentos WHERE data_atendimento = ? AND profissional = ? ORDER BY horario ASC", 
     conn, params=(hoje_str, usuario_atual)
 )
 
-df_crm_tudo = pd.read_sql_query("SELECT * FROM clientes_retencao WHERE profissional = ?", conn, params=(usuario_atual,))
+df_crm_tudo = pd.read_sql_query("SELECT id, nome, ultimo_atendimento, ciclo_dias FROM clientes_retencao WHERE profissional = ?", conn, params=(usuario_atual,))
 conn.close()
 
 if not df_crm_tudo.empty:
     df_crm_tudo["ultimo_atendimento"] = pd.to_datetime(df_crm_tudo["ultimo_atendimento"], errors="coerce").dt.date
     df_crm_tudo["proximo_atendimento"] = df_crm_tudo.apply(lambda r: r["ultimo_atendimento"] + timedelta(days=int(r["ciclo_dias"])), axis=1)
-    df_crm_pendente = df_crm_tudo[df_crm_tudo["proximo_atendimento"] <= date.today()]
+    df_crm_tudo["dias_atraso"] = df_crm_tudo["proximo_atendimento"].apply(lambda d: (date.today() - d).days)
+    # Filtra quem venceu ou está atrasado até hoje
+    df_crm_pendente = df_crm_tudo[df_crm_tudo["proximo_atendimento"] <= date.today()].sort_values(by="dias_atraso", ascending=False)
 else:
     df_crm_pendente = pd.DataFrame()
 
 if not df_agenda_hoje.empty or not df_crm_pendente.empty:
-    with st.expander("🔔 Central de Notificações Internas (Clique aqui para ver pendências)", expanded=True):
+    with st.expander("🔔 Central de Notificações Internas (Pendências)", expanded=True):
         col_al1, col_al2 = st.columns(2)
-        if not df_agenda_hoje.empty:
-            col_al1.warning(f"📅 **Hoje:** Você tem {len(df_agenda_hoje)} agendamento(s) para atender!")
-        if not df_crm_pendente.empty:
-            col_al2.error(f"⚠️ **CRM:** {len(df_crm_pendente)} cliente(s) precisam de contato (prazo vencido)!")
+        
+        with col_al1:
+            if not df_agenda_hoje.empty:
+                st.warning(f"📅 **Agendamentos de Hoje ({len(df_agenda_hoje)}):**")
+                for _, row in df_agenda_hoje.iterrows():
+                    st.markdown(f"- ⏰ **{row['horario']}** — {row['nome_cliente']} *({row['servico']})*")
+            else:
+                st.info("📅 Nenhum atendimento agendado para hoje.")
+
+        with col_al2:
+            if not df_crm_pendente.empty:
+                st.error(f"⚠️ **CRM Vencido / Para Chamar ({len(df_crm_pendente)}):**")
+                for _, row in df_crm_pendente.iterrows():
+                    dias = row["dias_atraso"]
+                    status_dias = "Venceu hoje" if dias == 0 else f"Atrasada há {dias} dia(s)"
+                    st.markdown(f"- 👤 **{row['nome']}** *({status_dias})*")
+            else:
+                st.success("✅ Nenhuma cliente pendente no CRM hoje.")
 else:
-    st.success("✅ Tudo em dia! Sem pendências para hoje.")
+    st.success("✅ Tudo em dia! Sem agendamentos para hoje e nenhuma cliente pendente no CRM.")
 
 st.divider()
 
