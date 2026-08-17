@@ -19,7 +19,8 @@ def init_db():
             servico TEXT NOT NULL,
             data_atendimento DATE NOT NULL,
             horario TEXT NOT NULL,
-            status TEXT DEFAULT 'Agendado'
+            status TEXT DEFAULT 'Agendado',
+            profissional TEXT DEFAULT 'Maria'
         )
     """
     )
@@ -32,10 +33,22 @@ def init_db():
             nome TEXT NOT NULL,
             telefone TEXT NOT NULL,
             ciclo_dias INTEGER NOT NULL,
-            ultimo_atendimento DATE NOT NULL
+            ultimo_atendimento DATE NOT NULL,
+            profissional TEXT DEFAULT 'Maria'
         )
     """
     )
+
+    # Migração segura para bases antigas
+    try:
+        c.execute("ALTER TABLE agendamentos ADD COLUMN profissional TEXT DEFAULT 'Maria'")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        c.execute("ALTER TABLE clientes_retencao ADD COLUMN profissional TEXT DEFAULT 'Maria'")
+    except sqlite3.OperationalError:
+        pass
 
     # Tabela 3: Minhas Tarefas / Anotações
     c.execute(
@@ -63,7 +76,7 @@ def init_db():
     """
     )
 
-    # Tabela 5: Configurações Editáveis
+    # Tabela 5: Configurações Editáveis do Studio
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS configuracoes (
@@ -73,11 +86,29 @@ def init_db():
     """
     )
 
-    # Valores padrão iniciais (se não existirem)
+    # Tabela 6: Perfis, Senhas e Serviços Customizados das Profissionais
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS perfis (
+            nome TEXT PRIMARY KEY,
+            senha TEXT NOT NULL,
+            servicos TEXT NOT NULL
+        )
+    """
+    )
+
+    # Valores padrão iniciais para o Studio
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('titulo_studio', 'Studio Maria Rossatto')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('subtitulo_studio', 'Sistema de Gestão & Retenção')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('whatsapp_studio', '5554991341375')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('tema_estilo', 'Dourado Luxo')")
+
+    # Serviços padrão iniciais para Maria e Camily
+    servicos_maria_default = "Mão tradicional\nPé tradicional\nBlindagem\nEsmaltação em gel\nBanho de gel\nAlongamento\nManutenção\nPacote de mão"
+    servicos_camily_default = "Design de Sobrancelha\nSobrancelha com Henna\nExtensão de Cílios Fio a Fio\nVolume Russo\nLash Lifting\nManutenção de Cílios"
+
+    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos) VALUES ('Maria', 'maria123', ?)", (servicos_maria_default,))
+    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos) VALUES ('Camily', 'camily123', ?)", (servicos_camily_default,))
 
     # Auto-delete da lixeira (mais de 30 dias)
     limite_30_dias = str(date.today() - timedelta(days=30))
@@ -89,7 +120,7 @@ def init_db():
 
 init_db()
 
-# --- FUNÇÃO PARA BUSCAR CONFIGURAÇÕES ---
+# --- FUNÇÕES DE BUSCA NO BANCO ---
 def get_config(chave):
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
@@ -97,6 +128,14 @@ def get_config(chave):
     row = c.fetchone()
     conn.close()
     return row[0] if row else ""
+
+def get_perfil_info(nome_prof):
+    conn = sqlite3.connect("agenda_unhas_v2.db")
+    c = conn.cursor()
+    c.execute("SELECT senha, servicos FROM perfis WHERE nome = ?", (nome_prof,))
+    row = c.fetchone()
+    conn.close()
+    return row if row else ("", "")
 
 # Configuração da página
 st.set_page_config(
@@ -158,13 +197,65 @@ estilos_css = {
 st.markdown(estilos_css.get(tema_atual, estilos_css["Dourado Luxo"]), unsafe_allow_html=True)
 
 # --- BLOQUEIO ANTI-TRADUÇÃO ---
-st.markdown(
-    '<meta name="google" content="notranslate">', unsafe_allow_html=True
-)
+st.markdown('<meta name="google" content="notranslate">', unsafe_allow_html=True)
+
+# --- CONTROLE DE SESSÃO / LOGIN ---
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+    st.session_state.usuario = ""
+    st.session_state.perfil = ""
+
+# TELA DE LOGIN SE NÃO ESTIVER AUTENTICADO
+if not st.session_state.autenticado:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
+    
+    with col_l2:
+        with st.container(border=True):
+            try:
+                st.image("logo.JPG", use_container_width=True)
+            except:
+                st.title("💅 Studio")
+
+            st.subheader("🔒 Acesso Restrito ao Sistema")
+            st.write("Digite sua senha para acessar sua agenda.")
+
+            with st.form("form_login"):
+                escolha_usuario = st.selectbox("Selecione quem é você:", ["Maria", "Camily"])
+                senha_input = st.text_input("Senha de Acesso:", type="password")
+                btn_entrar = st.form_submit_button("Entrar no Sistema")
+
+                if btn_entrar:
+                    senha_db, _ = get_perfil_info(escolha_usuario)
+                    if senha_input == senha_db:
+                        st.session_state.autenticado = True
+                        st.session_state.usuario = escolha_usuario
+                        st.session_state.perfil = f"{'Unhas (Maria)' if escolha_usuario == 'Maria' else 'Sobrancelhas & Cílios (Camily)'}"
+                        st.rerun()
+                    else:
+                        st.error("Senha incorreta! Verifique com o administrador.")
+        st.stop()
+
+# Usuário logado
+usuario_atual = st.session_state.usuario  # "Maria" ou "Camily"
+perfil_atual = st.session_state.perfil
+
+# Carregar serviços atuais da profissional do banco de dados
+_, servicos_str_db = get_perfil_info(usuario_atual)
+servicos_disponiveis = [s.strip() for s in servicos_str_db.split("\n") if s.strip()]
 
 # --- BARRA LATERAL ---
 with st.sidebar:
     st.image("logo.JPG", use_container_width=True)
+    st.success(f"Logada como:\n**{perfil_atual}**")
+    
+    if st.button("🚪 Sair (Trocar de Usuário)"):
+        st.session_state.autenticado = False
+        st.session_state.usuario = ""
+        st.session_state.perfil = ""
+        st.rerun()
+
+    st.divider()
 
     tipo_cadastro = st.radio(
         "Selecione a ação:",
@@ -178,23 +269,12 @@ with st.sidebar:
     st.divider()
 
     if tipo_cadastro == "📅 Novo Agendamento (Horário)":
-        st.header("➕ Agendar Horário")
+        st.header(f"➕ Agendar ({usuario_atual})")
+
         with st.form("form_rapido", clear_on_submit=True):
             nome_cliente = st.text_input("Nome da Cliente*")
             telefone = st.text_input("WhatsApp", placeholder="54991341375")
-            servico = st.selectbox(
-                "Serviço*",
-                [
-                    "Mão tradicional",
-                    "Pé tradicional",
-                    "Blindagem",
-                    "Esmaltação em gel",
-                    "Banho de gel",
-                    "Alongamento",
-                    "Manutenção",
-                    "Pacote de mão",
-                ],
-            )
+            servico = st.selectbox("Serviço*", servicos_disponiveis)
             data_atendimento = st.date_input(
                 "Data*", value=date.today(), format="DD/MM/YYYY"
             )
@@ -211,14 +291,15 @@ with st.sidebar:
                     conn = sqlite3.connect("agenda_unhas_v2.db")
                     c = conn.cursor()
                     c.execute(
-                        """INSERT INTO agendamentos (nome_cliente, telefone, servico, data_atendimento, horario) 
-                                   VALUES (?, ?, ?, ?, ?)""",
+                        """INSERT INTO agendamentos (nome_cliente, telefone, servico, data_atendimento, horario, profissional) 
+                                   VALUES (?, ?, ?, ?, ?, ?)""",
                         (
                             nome_cliente,
                             telefone,
                             servico,
                             str(data_atendimento),
                             str(horario)[:5],
+                            usuario_atual,
                         ),
                     )
                     conn.commit()
@@ -227,7 +308,7 @@ with st.sidebar:
                     st.rerun()
 
     elif tipo_cadastro == "👤 Cadastrar Cliente (CRM)":
-        st.header("➕ Cadastrar p/ CRM")
+        st.header(f"➕ CRM ({usuario_atual})")
         with st.form("form_cliente_crm", clear_on_submit=True):
             nome = st.text_input("Nome da Cliente*")
             telefone = st.text_input("WhatsApp*", placeholder="54991341375")
@@ -252,8 +333,8 @@ with st.sidebar:
                     data_iso = ultimo_atendimento.strftime("%Y-%m-%d")
 
                     c.execute(
-                        "SELECT id FROM clientes_retencao WHERE telefone = ?",
-                        (tel_clean,),
+                        "SELECT id FROM clientes_retencao WHERE telefone = ? AND profissional = ?",
+                        (tel_clean, usuario_atual),
                     )
                     existente = c.fetchone()
 
@@ -267,9 +348,9 @@ with st.sidebar:
                         st.success(f"Cadastro de {nome} atualizado no CRM!")
                     else:
                         c.execute(
-                            """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento) 
-                               VALUES (?, ?, ?, ?)""",
-                            (nome, tel_clean, ciclo_dias, data_iso),
+                            """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) 
+                               VALUES (?, ?, ?, ?, ?)""",
+                            (nome, tel_clean, ciclo_dias, data_iso, usuario_atual),
                         )
                         st.success(f"Cliente {nome} salva no CRM!")
 
@@ -281,7 +362,7 @@ with st.sidebar:
         st.header("➕ Nova Anotação / Tarefa")
         with st.form("form_tarefa", clear_on_submit=True):
             titulo_t = st.text_input("Título / Lembrete*")
-            desc_t = st.text_area("Detalhes (Opcional)", placeholder="Ex: Comprar acetona e lixas novas")
+            desc_t = st.text_area("Detalhes (Opcional)", placeholder="Ex: Comprar material")
             prio_t = st.selectbox("Prioridade", ["Baixa", "Média", "Alta"], index=1)
 
             salvar_t = st.form_submit_button("Salvar Tarefa")
@@ -306,7 +387,7 @@ with st.sidebar:
 titulo_atual = get_config("titulo_studio")
 subtitulo_atual = get_config("subtitulo_studio")
 
-st.title(f"💅 {titulo_atual} — {subtitulo_atual}")
+st.title(f"💅 {titulo_atual} — Painel da {usuario_atual}")
 
 aba_agenda, aba_crm, aba_tarefas, aba_lixeira, aba_config = st.tabs(
     [
@@ -323,7 +404,7 @@ aba_agenda, aba_crm, aba_tarefas, aba_lixeira, aba_config = st.tabs(
 # ==========================================
 with aba_agenda:
     conn = sqlite3.connect("agenda_unhas_v2.db")
-    df_todos = pd.read_sql_query("SELECT * FROM agendamentos", conn)
+    df_todos = pd.read_sql_query("SELECT * FROM agendamentos WHERE profissional = ?", conn, params=(usuario_atual,))
     conn.close()
 
     eventos_calendario = []
@@ -356,24 +437,24 @@ with aba_agenda:
         },
     }
 
-    st.markdown("### 📅 Visão Geral de Atendimentos")
+    st.markdown(f"### 📅 Visão Geral de Atendimentos — {usuario_atual}")
     state = calendar(
         events=eventos_calendario,
         options=opcoes_calendario,
-        key="cal_studio",
+        key=f"cal_studio_{usuario_atual}",
     )
 
     st.divider()
 
     data_selecionada = st.date_input(
-        "📆 Ver detalhes do dia:", value=date.today(), format="DD/MM/YYYY"
+        "📆 Ver detalhes do dia:", value=date.today(), format="DD/MM/YYYY", key=f"date_agenda_{usuario_atual}"
     )
 
     conn = sqlite3.connect("agenda_unhas_v2.db")
     df = pd.read_sql_query(
-        "SELECT * FROM agendamentos WHERE data_atendimento = ? ORDER BY horario ASC",
+        "SELECT * FROM agendamentos WHERE data_atendimento = ? AND profissional = ? ORDER BY horario ASC",
         conn,
-        params=(str(data_selecionada),),
+        params=(str(data_selecionada), usuario_atual),
     )
     conn.close()
 
@@ -382,7 +463,7 @@ with aba_agenda:
     )
 
     if not df.empty:
-        texto_resumo = f"💅 *Resumo de Atendimentos ({data_selecionada.strftime('%d/%m/%Y')}):*\n\n"
+        texto_resumo = f"💅 *Resumo de Atendimentos ({data_selecionada.strftime('%d/%m/%Y')} - {usuario_atual}):*\n\n"
         for _, row in df.iterrows():
             texto_resumo += f"⏰ *{row['horario']}* — {row['nome_cliente']} ({row['servico']})\n"
 
@@ -393,7 +474,7 @@ with aba_agenda:
             f"""
             <a href="{link_resumo}" target="_blank" style="text-decoration: none;">
                 <button style="background-color: #25D366; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 20px;">
-                    📲 Enviar Lista de Hoje no Meu WhatsApp
+                    📲 Enviar Lista de Hoje no WhatsApp
                 </button>
             </a>
         """,
@@ -454,7 +535,7 @@ with aba_agenda:
                         ):
                             conn = sqlite3.connect("agenda_unhas_v2.db")
                             c = conn.cursor()
-                            info_str = f"Agendamento: {row['nome_cliente']} | Serviço: {row['servico']} | Data: {row['data_atendimento']} {row['horario']} | Tel: {row['telefone']}"
+                            info_str = f"[{usuario_atual}] Agendamento: {row['nome_cliente']} | Serviço: {row['servico']} | Data: {row['data_atendimento']} {row['horario']} | Tel: {row['telefone']}"
                             c.execute(
                                 "INSERT INTO lixeira (tipo_item, dados_item, data_exclusao) VALUES (?, ?, ?)",
                                 ("agendamento", info_str, str(date.today())),
@@ -488,7 +569,7 @@ with aba_agenda:
                                 tel_clean = "".join(filter(str.isdigit, str(row["telefone"])))
                                 conn = sqlite3.connect("agenda_unhas_v2.db")
                                 c = conn.cursor()
-                                c.execute("SELECT id FROM clientes_retencao WHERE telefone = ?", (tel_clean,))
+                                c.execute("SELECT id FROM clientes_retencao WHERE telefone = ? AND profissional = ?", (tel_clean, usuario_atual))
                                 cliente_existente = c.fetchone()
                                 data_atend_iso = str(row["data_atendimento"])
 
@@ -502,9 +583,9 @@ with aba_agenda:
                                     st.success(f"{row['nome_cliente']} atualizada no CRM!")
                                 else:
                                     c.execute(
-                                        """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento)
-                                           VALUES (?, ?, ?, ?)""",
-                                        (row["nome_cliente"], tel_clean, ciclo_escolhido, data_atend_iso),
+                                        """INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional)
+                                           VALUES (?, ?, ?, ?, ?)""",
+                                        (row["nome_cliente"], tel_clean, ciclo_escolhido, data_atend_iso, usuario_atual),
                                     )
                                     st.success(f"{row['nome_cliente']} cadastrada no CRM!")
 
@@ -512,14 +593,14 @@ with aba_agenda:
                                 conn.close()
                                 st.rerun()
     else:
-        st.info("Nenhum atendimento marcado para este dia.")
+        st.info("Nenhum atendimento marcado para este dia nesta agenda.")
 
 # ==========================================
 # ABA 2: CENTRAL DE RETENÇÃO (CRM)
 # ==========================================
 with aba_crm:
     conn = sqlite3.connect("agenda_unhas_v2.db")
-    df_crm = pd.read_sql_query("SELECT * FROM clientes_retencao", conn)
+    df_crm = pd.read_sql_query("SELECT * FROM clientes_retencao WHERE profissional = ?", conn, params=(usuario_atual,))
     conn.close()
 
     if not df_crm.empty:
@@ -541,6 +622,7 @@ with aba_crm:
         termo_busca = st.text_input(
             "🔍 Pesquisar Cliente no CRM:",
             placeholder="Digite o nome da cliente ou WhatsApp e pressione Enter...",
+            key=f"busca_crm_{usuario_atual}"
         )
 
         if termo_busca:
@@ -737,7 +819,7 @@ with aba_crm:
                         ):
                             conn = sqlite3.connect("agenda_unhas_v2.db")
                             c = conn.cursor()
-                            info_str = f"Cliente CRM: {row['nome']} | Tel: {row['telefone']} | Ciclo: {row['ciclo_dias']} dias | Último Atend: {row['ultimo_atendimento']}"
+                            info_str = f"[{usuario_atual}] Cliente CRM: {row['nome']} | Tel: {row['telefone']} | Ciclo: {row['ciclo_dias']} dias"
                             c.execute(
                                 "INSERT INTO lixeira (tipo_item, dados_item, data_exclusao) VALUES (?, ?, ?)",
                                 ("crm", info_str, str(date.today())),
@@ -753,7 +835,7 @@ with aba_crm:
 
     else:
         st.info(
-            "Nenhuma cliente cadastrada no CRM ainda. Use a barra lateral para cadastrar!"
+            "Nenhuma cliente cadastrada no CRM para esta profissional ainda."
         )
 
 # ==========================================
@@ -767,7 +849,7 @@ with aba_tarefas:
     conn.close()
 
     if df_t.empty:
-        st.info("Nenhuma tarefa ou anotação cadastrada. Use a barra lateral para criar a primeira!")
+        st.info("Nenhuma tarefa ou anotação cadastrada.")
     else:
         for idx, row in df_t.iterrows():
             with st.container(border=True):
@@ -801,7 +883,7 @@ with aba_tarefas:
                     if st.button("🗑️ Mover p/ Lixeira", key=f"del_t_{row['id']}"):
                         conn = sqlite3.connect("agenda_unhas_v2.db")
                         c = conn.cursor()
-                        info_str = f"Tarefa: {row['titulo']} | Detalhes: {row['descricao']} | Prioridade: {row['prioridade']}"
+                        info_str = f"Tarefa: {row['titulo']} | Detalhes: {row['descricao']}"
                         c.execute(
                             "INSERT INTO lixeira (tipo_item, dados_item, data_exclusao) VALUES (?, ?, ?)",
                             ("tarefa", info_str, str(date.today())),
@@ -854,15 +936,14 @@ with aba_lixeira:
 # ABA 5: CONFIGURAÇÕES & TEMA VISUAL
 # ==========================================
 with aba_config:
-    st.subheader("⚙️ Configurações de Nome, Contato e Aparência do Studio")
-    st.write("Altere as informações e as cores do aplicativo a qualquer momento.")
+    st.subheader("⚙️ Configurações Gerais do Studio")
+    st.write("Altere as informações gerais e as cores do aplicativo.")
 
     with st.form("form_config_studio"):
         novo_titulo = st.text_input("Nome do Studio / Empresa:", value=titulo_atual)
         novo_subtitulo = st.text_input("Subtítulo / Descrição:", value=subtitulo_atual)
-        novo_wa_padrao = st.text_input("WhatsApp Principal (para receber a lista do dia):", value=get_config("whatsapp_studio"))
+        novo_wa_padrao = st.text_input("WhatsApp Principal:", value=get_config("whatsapp_studio"))
 
-        # SELETOR DE TEMAS VISUAIS
         temas_disponiveis = [
             "Dourado Luxo",
             "Clean White (Tudo Branco)",
@@ -874,7 +955,7 @@ with aba_config:
         index_tema = temas_disponiveis.index(tema_atual) if tema_atual in temas_disponiveis else 0
         novo_tema = st.selectbox("🎨 Tema Visual de Cores:", temas_disponiveis, index=index_tema)
 
-        btn_salvar_config = st.form_submit_button("💾 Salvar Configurações e Cores")
+        btn_salvar_config = st.form_submit_button("💾 Salvar Configurações Gerais")
 
         if btn_salvar_config:
             conn = sqlite3.connect("agenda_unhas_v2.db")
@@ -885,13 +966,50 @@ with aba_config:
             c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'tema_estilo'", (novo_tema,))
             conn.commit()
             conn.close()
-            st.success("Configurações e cores salvas com sucesso!")
+            st.success("Configurações salvas com sucesso!")
             st.rerun()
+
+    st.divider()
+    st.subheader(f"⚙️ Minhas Configurações de Perfil ({usuario_atual})")
+    st.write("Personalize os seus serviços prestados e altere sua senha de acesso.")
+
+    senha_atual_db, servicos_atuais_db = get_perfil_info(usuario_atual)
+
+    with st.form("form_config_perfil"):
+        st.markdown("### ✂️ Meus Serviços (Um por linha)")
+        novos_servicos = st.text_area(
+            "Edite, adicione ou remova os serviços que você atende:",
+            value=servicos_atuais_db,
+            height=150,
+            help="Escreva cada serviço em uma linha separada."
+        )
+
+        st.markdown("### 🔑 Alterar Senha")
+        nova_senha_input = st.text_input("Nova Senha (deixe em branco para não alterar):", type="password")
+        confirma_senha_input = st.text_input("Confirme a Nova Senha:", type="password")
+
+        btn_salvar_perfil = st.form_submit_button("💾 Salvar Meus Serviços e Senha")
+
+        if btn_salvar_perfil:
+            if nova_senha_input and nova_senha_input != confirma_senha_input:
+                st.error("As senhas não coincidem!")
+            else:
+                conn = sqlite3.connect("agenda_unhas_v2.db")
+                c = conn.cursor()
+                if nova_senha_input:
+                    c.execute("UPDATE perfis SET senha = ?, servicos = ? WHERE nome = ?", (nova_senha_input, novos_servicos, usuario_atual))
+                    st.success("Senha e serviços atualizados com sucesso!")
+                else:
+                    c.execute("UPDATE perfis SET servicos = ? WHERE nome = ?", (novos_servicos, usuario_atual))
+                    st.success("Serviços atualizados com sucesso!")
+                conn.commit()
+                conn.close()
+                st.rerun()
 
     # --- SEÇÃO DE BACKUP SEGURO ---
     st.divider()
     st.subheader("🛡️ Backup e Segurança de Dados")
-    st.warning("⚠️ **Atenção:** Como o sistema roda na nuvem, sempre que você for atualizar o código ou reiniciar o app, **BAIXE O BACKUP** primeiro para não perder suas clientes!")
+    st.warning("⚠️ **Atenção:** Como o sistema roda na nuvem, sempre que você for atualizar o código ou reiniciar o app, **BAIXE O BACKUP** primeiro para não perder os dados!")
     
     try:
         with open("agenda_unhas_v2.db", "rb") as db_file:
@@ -901,7 +1019,7 @@ with aba_config:
                 data=dados_banco,
                 file_name=f"backup_studio_{date.today().strftime('%d-%m-%Y')}.db",
                 mime="application/octet-stream",
-                help="Clique aqui para salvar o arquivo de banco de dados no seu computador."
+                help="Salva todas as profissionais e dados juntos em um único arquivo."
             )
     except Exception as e:
         st.error("O banco de dados ainda não foi criado ou ocorreu um erro na leitura.")
