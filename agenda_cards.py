@@ -76,7 +76,7 @@ def init_db():
     """
     )
 
-    # Tabela 5: Configurações Editáveis do Studio
+    # Tabela 5: Configurações Gerais do Studio
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS configuracoes (
@@ -86,29 +86,35 @@ def init_db():
     """
     )
 
-    # Tabela 6: Perfis, Senhas e Serviços Customizados das Profissionais
+    # Tabela 6: Perfis, Senhas, Serviços e WhatsApp Individual
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS perfis (
             nome TEXT PRIMARY KEY,
             senha TEXT NOT NULL,
-            servicos TEXT NOT NULL
+            servicos TEXT NOT NULL,
+            whatsapp TEXT
         )
     """
     )
 
+    # Migração segura para tabela perfis caso já exista sem a coluna whatsapp
+    try:
+        c.execute("ALTER TABLE perfis ADD COLUMN whatsapp TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
+
     # Valores padrão iniciais para o Studio
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('titulo_studio', 'Studio Maria Rossatto')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('subtitulo_studio', 'Sistema de Gestão & Retenção')")
-    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('whatsapp_studio', '5554991341375')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('tema_estilo', 'Dourado Luxo')")
 
-    # Serviços padrão iniciais para Maria e Camily
+    # Serviços e WhatsApp padrão iniciais para Maria e Camily
     servicos_maria_default = "Mão tradicional\nPé tradicional\nBlindagem\nEsmaltação em gel\nBanho de gel\nAlongamento\nManutenção\nPacote de mão"
     servicos_camily_default = "Design de Sobrancelha\nSobrancelha com Henna\nExtensão de Cílios Fio a Fio\nVolume Russo\nLash Lifting\nManutenção de Cílios"
 
-    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos) VALUES ('Maria', 'maria123', ?)", (servicos_maria_default,))
-    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos) VALUES ('Camily', 'camily123', ?)", (servicos_camily_default,))
+    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos, whatsapp) VALUES ('Maria', 'maria123', ?, '5554991341375')", (servicos_maria_default,))
+    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos, whatsapp) VALUES ('Camily', 'camily123', ?, '')", (servicos_camily_default,))
 
     # Auto-delete da lixeira (mais de 30 dias)
     limite_30_dias = str(date.today() - timedelta(days=30))
@@ -132,10 +138,10 @@ def get_config(chave):
 def get_perfil_info(nome_prof):
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
-    c.execute("SELECT senha, servicos FROM perfis WHERE nome = ?", (nome_prof,))
+    c.execute("SELECT senha, servicos, whatsapp FROM perfis WHERE nome = ?", (nome_prof,))
     row = c.fetchone()
     conn.close()
-    return row if row else ("", "")
+    return row if row else ("", "", "")
 
 # Configuração da página
 st.set_page_config(
@@ -226,7 +232,7 @@ if not st.session_state.autenticado:
                 btn_entrar = st.form_submit_button("Entrar no Sistema")
 
                 if btn_entrar:
-                    senha_db, _ = get_perfil_info(escolha_usuario)
+                    senha_db, _, _ = get_perfil_info(escolha_usuario)
                     if senha_input == senha_db:
                         st.session_state.autenticado = True
                         st.session_state.usuario = escolha_usuario
@@ -240,8 +246,8 @@ if not st.session_state.autenticado:
 usuario_atual = st.session_state.usuario  # "Maria" ou "Camily"
 perfil_atual = st.session_state.perfil
 
-# Carregar serviços atuais da profissional do banco de dados
-_, servicos_str_db = get_perfil_info(usuario_atual)
+# Carregar dados atuais do perfil do banco de dados
+_, servicos_str_db, whatsapp_prof_db = get_perfil_info(usuario_atual)
 servicos_disponiveis = [s.strip() for s in servicos_str_db.split("\n") if s.strip()]
 
 # --- BARRA LATERAL ---
@@ -467,19 +473,22 @@ with aba_agenda:
         for _, row in df.iterrows():
             texto_resumo += f"⏰ *{row['horario']}* — {row['nome_cliente']} ({row['servico']})\n"
 
-        numero_whatsapp = get_config("whatsapp_studio")
-        link_resumo = f"https://wa.me/{numero_whatsapp}?text={texto_resumo.replace(' ', '%20').replace('\n', '%0A')}"
-
-        st.markdown(
-            f"""
-            <a href="{link_resumo}" target="_blank" style="text-decoration: none;">
-                <button style="background-color: #25D366; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 20px;">
-                    📲 Enviar Lista de Hoje no WhatsApp
-                </button>
-            </a>
-        """,
-            unsafe_allow_html=True,
-        )
+        # Usa o WhatsApp individual da profissional logada
+        numero_whatsapp = whatsapp_prof_db
+        if numero_whatsapp:
+            link_resumo = f"https://wa.me/{numero_whatsapp}?text={texto_resumo.replace(' ', '%20').replace('\n', '%0A')}"
+            st.markdown(
+                f"""
+                <a href="{link_resumo}" target="_blank" style="text-decoration: none;">
+                    <button style="background-color: #25D366; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 20px;">
+                        📲 Enviar Lista de Hoje no Meu WhatsApp
+                    </button>
+                </a>
+            """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.warning("⚠️ Cadastre o seu número de WhatsApp nas 'Configurações & Estilo' para poder enviar a lista do dia para o seu celular!")
 
         cols = st.columns(2)
         for idx, row in df.iterrows():
@@ -942,7 +951,6 @@ with aba_config:
     with st.form("form_config_studio"):
         novo_titulo = st.text_input("Nome do Studio / Empresa:", value=titulo_atual)
         novo_subtitulo = st.text_input("Subtítulo / Descrição:", value=subtitulo_atual)
-        novo_wa_padrao = st.text_input("WhatsApp Principal:", value=get_config("whatsapp_studio"))
 
         temas_disponiveis = [
             "Dourado Luxo",
@@ -962,7 +970,6 @@ with aba_config:
             c = conn.cursor()
             c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'titulo_studio'", (novo_titulo,))
             c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'subtitulo_studio'", (novo_subtitulo,))
-            c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'whatsapp_studio'", ("".join(filter(str.isdigit, novo_wa_padrao)),))
             c.execute("UPDATE configuracoes SET valor = ? WHERE chave = 'tema_estilo'", (novo_tema,))
             conn.commit()
             conn.close()
@@ -971,11 +978,14 @@ with aba_config:
 
     st.divider()
     st.subheader(f"⚙️ Minhas Configurações de Perfil ({usuario_atual})")
-    st.write("Personalize os seus serviços prestados e altere sua senha de acesso.")
+    st.write("Personalize seus serviços, sua senha e o seu WhatsApp individual para receber a lista do dia.")
 
-    senha_atual_db, servicos_atuais_db = get_perfil_info(usuario_atual)
+    _, servicos_atuais_db, whatsapp_atual_db = get_perfil_info(usuario_atual)
 
     with st.form("form_config_perfil"):
+        st.markdown("📱 **Meu WhatsApp Pessoal (ex: 5554991341375):**")
+        novo_wa_prof = st.text_input("WhatsApp para receber a lista do dia:", value=whatsapp_atual_db)
+
         st.markdown("### ✂️ Meus Serviços (Um por linha)")
         novos_servicos = st.text_area(
             "Edite, adicione ou remova os serviços que você atende:",
@@ -988,20 +998,21 @@ with aba_config:
         nova_senha_input = st.text_input("Nova Senha (deixe em branco para não alterar):", type="password")
         confirma_senha_input = st.text_input("Confirme a Nova Senha:", type="password")
 
-        btn_salvar_perfil = st.form_submit_button("💾 Salvar Meus Serviços e Senha")
+        btn_salvar_perfil = st.form_submit_button("💾 Salvar Meu Perfil, Serviços e WhatsApp")
 
         if btn_salvar_perfil:
             if nova_senha_input and nova_senha_input != confirma_senha_input:
                 st.error("As senhas não coincidem!")
             else:
+                wa_clean = "".join(filter(str.isdigit, novo_wa_prof))
                 conn = sqlite3.connect("agenda_unhas_v2.db")
                 c = conn.cursor()
                 if nova_senha_input:
-                    c.execute("UPDATE perfis SET senha = ?, servicos = ? WHERE nome = ?", (nova_senha_input, novos_servicos, usuario_atual))
-                    st.success("Senha e serviços atualizados com sucesso!")
+                    c.execute("UPDATE perfis SET senha = ?, servicos = ?, whatsapp = ? WHERE nome = ?", (nova_senha_input, novos_servicos, wa_clean, usuario_atual))
+                    st.success("Perfil, senha e serviços atualizados com sucesso!")
                 else:
-                    c.execute("UPDATE perfis SET servicos = ? WHERE nome = ?", (novos_servicos, usuario_atual))
-                    st.success("Serviços atualizados com sucesso!")
+                    c.execute("UPDATE perfis SET servicos = ?, whatsapp = ? WHERE nome = ?", (novos_servicos, wa_clean, usuario_atual))
+                    st.success("Perfil e serviços atualizados com sucesso!")
                 conn.commit()
                 conn.close()
                 st.rerun()
