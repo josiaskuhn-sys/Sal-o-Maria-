@@ -403,9 +403,6 @@ conn = sqlite3.connect("agenda_unhas_v2.db")
 hoje_str = date.today().isoformat()
 
 df_agenda_hoje = pd.read_sql_query(
-    "SELECT horario, nome_clientel, servico FROM agendamentos WHERE data_atendimento = ? AND profissional = ? ORDER BY horario ASC", 
-    conn, params=(hoje_str, usuario_atual)
-) if False else pd.read_sql_query(
     "SELECT horario, nome_cliente, servico, valor FROM agendamentos WHERE data_atendimento = ? AND profissional = ? ORDER BY horario ASC", 
     conn, params=(hoje_str, usuario_atual)
 )
@@ -421,7 +418,6 @@ if not df_crm_tudo.empty:
 else:
     df_crm_pendente = pd.DataFrame()
 
-# Notificação automática de fim de mês
 hoje_dt = date.today()
 ultimo_dia_mes = (hoje_dt.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 aviso_fim_mes = ""
@@ -458,7 +454,6 @@ else:
 
 st.divider()
 
-# Abas do sistema (incluindo a nova aba Financeiro)
 aba_agenda, aba_crm, aba_fin, aba_tarefas, aba_lixeira, aba_config = st.tabs(
     [
         "📅 Agenda",
@@ -480,7 +475,6 @@ with aba_agenda:
 
     eventos_calendario = []
     for _, row in df_todos.iterrows():
-        # Título corrigido sem duplicar hora (exibe apenas Nome, Serviço e Valor)
         eventos_calendario.append(
             {
                 "title": f"{row['nome_cliente']} ({row['servico']}) - R$ {row['valor']:.2f}",
@@ -655,7 +649,7 @@ with aba_crm:
         st.info("Nenhuma cliente cadastrada no CRM.")
 
 # ==========================================
-# ABA 3: FINANCEIRO & GANHOS (NOVA)
+# ABA 3: FINANCEIRO & GANHOS
 # ==========================================
 with aba_fin:
     st.subheader(f"📊 Relatório Financeiro — {usuario_atual}")
@@ -668,7 +662,6 @@ with aba_fin:
     if not df_fin.empty:
         df_fin["data_atendimento"] = pd.to_datetime(df_fin["data_atendimento"]).dt.date
 
-        # Filtro de Período
         filtro_periodo = st.selectbox("Selecione o Período:", ["Mês Atual", "Esta Semana", "Hoje", "Personalizado"])
         
         hoje_f = date.today()
