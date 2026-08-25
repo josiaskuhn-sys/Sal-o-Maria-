@@ -9,7 +9,7 @@ def init_db():
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
 
-    # Tabela 1: Agendamentos por Horário
+    # Tabela 1: Agendamentos por Horário (com valor, pagamento e duração)
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS agendamentos (
@@ -156,7 +156,7 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE TEMAS DINÂMICOS & RESPONSIVIDADE MOBILE (CSS) ---
+# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO NOTION PARA O CALENDÁRIO (CSS) ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
@@ -169,14 +169,37 @@ estilos_css = {
             .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #A88234 !important; }
             
+            /* Estilo Notion / Cards para os eventos do Calendário (Evita cortes) */
+            .fc-event {
+                background-color: #FFFFFF !important;
+                border: 1px solid #E3DDD5 !important;
+                border-left: 4px solid #C5A059 !important;
+                border-radius: 6px !important;
+                padding: 3px 6px !important;
+                margin-bottom: 3px !important;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            }
+            .fc-event-title {
+                white-space: normal !important;
+                word-break: break-word !important;
+                font-size: 0.75rem !important;
+                font-weight: 600 !important;
+                color: #33322E !important;
+            }
+            .fc-daygrid-event {
+                white-space: normal !important;
+                align-items: normal !important;
+            }
+            
             /* Ajustes para Celular / Telas Pequenas */
             @media (max-width: 768px) {
                 .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; padding-top: 1rem !important; }
                 h1 { font-size: 1.4rem !important; }
                 h2 { font-size: 1.2rem !important; }
                 h3 { font-size: 1.1rem !important; }
-                .fc-toolbar-title { font-size: 0.9rem !important; }
-                .fc-button { padding: 2px 4px !important; font-size: 0.75rem !important; }
+                .fc-toolbar-title { font-size: 0.85rem !important; }
+                .fc-button { padding: 2px 4px !important; font-size: 0.7rem !important; }
+                .fc-event-title { font-size: 0.68rem !important; }
             }
         </style>
     """,
@@ -188,9 +211,9 @@ estilos_css = {
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #E0E0E0 !important; }
             .stButton>button { background-color: #000000 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #000000 !important; }
-            @media (max-width: 768px) {
-                .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
-            }
+            .fc-event { background-color: #F9FAFB !important; border: 1px solid #E5E7EB !important; border-left: 4px solid #000000 !important; border-radius: 6px !important; padding: 3px 6px !important; }
+            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.75rem !important; font-weight: 600 !important; color: #111827 !important; }
+            @media (max-width: 768px) { .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; } }
         </style>
     """,
     "Nude / Rosé": """
@@ -199,6 +222,8 @@ estilos_css = {
             .stSidebar { background-color: #FFF0F2; }
             .stButton>button { background-color: #E8A5A5 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #D87070 !important; }
+            .fc-event { background-color: #FFFFFF !important; border: 1px solid #F5D0D0 !important; border-left: 4px solid #E8A5A5 !important; border-radius: 6px !important; padding: 3px 6px !important; }
+            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.75rem !important; font-weight: 600 !important; color: #4A3E3D !important; }
             @media (max-width: 768px) { .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; } }
         </style>
     """,
@@ -208,6 +233,8 @@ estilos_css = {
             .stSidebar { background-color: #1E1E1E; }
             .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #BB86FC !important; }
+            .fc-event { background-color: #1E1E1E !important; border: 1px solid #333333 !important; border-left: 4px solid #BB86FC !important; border-radius: 6px !important; padding: 3px 6px !important; }
+            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.75rem !important; font-weight: 600 !important; color: #E0E0E0 !important; }
             @media (max-width: 768px) { .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; } }
         </style>
     """,
@@ -217,6 +244,8 @@ estilos_css = {
             .stSidebar { background-color: #EDE9FE; }
             .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #7C3AED !important; }
+            .fc-event { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-left: 4px solid #8B5CF6 !important; border-radius: 6px !important; padding: 3px 6px !important; }
+            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.75rem !important; font-weight: 600 !important; color: #3A354A !important; }
             @media (max-width: 768px) { .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; } }
         </style>
     """,
@@ -479,10 +508,11 @@ with aba_agenda:
     for _, row in df_todos.iterrows():
         eventos_calendario.append(
             {
-                "title": f"{row['nome_cliente']} ({row['servico']}) - R$ {row['valor']:.2f}",
+                "title": f"🕒 {row['horario']} | {row['nome_cliente']} - {row['servico']}",
                 "start": f"{row['data_atendimento']}T{row['horario']}:00",
-                "backgroundColor": "#FF4B4B" if row["status"] == "Agendado" else "#25D366",
-                "borderColor": "#ffffff",
+                "backgroundColor": "transparent",
+                "borderColor": "transparent",
+                "textColor": "#33322E"
             }
         )
 
@@ -651,11 +681,11 @@ with aba_crm:
         st.info("Nenhuma cliente cadastrada no CRM.")
 
 # ==========================================
-# ABA 3: FINANCEIRO & GANHOS
+# ABA 3: FINANCEIRO & GANHOS (COM RELATÓRIO PDF)
 # ==========================================
 with aba_fin:
     st.subheader(f"📊 Relatório Financeiro — {usuario_atual}")
-    st.write("Acompanhe os ganhos por dia, semana ou mês com detalhamento de pagamentos.")
+    st.write("Acompanhe os ganhos por dia, semana ou mês e baixe o relatório pronto para PDF/Impressão.")
 
     conn = sqlite3.connect("agenda_unhas_v2.db")
     df_fin = pd.read_sql_query("SELECT * FROM agendamentos WHERE profissional = ?", conn, params=(usuario_atual,))
@@ -689,10 +719,76 @@ with aba_fin:
 
         col_f1, col_f2, col_f3 = st.columns(3)
         col_f1.metric("💵 Total no Período", f"R$ {total_ganho:.2f}")
-        col_f2.metric("📋 Atendimentos Realizados", qtd_atendimentos)
+        col_f2.metric("📋 Atendimentos", qtd_atendimentos)
         col_f3.metric("⭐ Ticket Médio", f"R$ {ticket_medio:.2f}")
 
         st.divider()
+
+        # Botão de Download do Documento PDF / Impressão
+        if not df_filtrado.empty:
+            pagto_html = ""
+            pagto_resumo = df_filtrado.groupby("forma_pagamento")["valor"].sum().reset_index()
+            for _, r in pagto_resumo.iterrows():
+                pagto_html += f"<li><b>{r['forma_pagamento']}:</b> R$ {r['valor']:.2f}</li>"
+
+            linhas_tabela = ""
+            for _, r in df_filtrado.iterrows():
+                dt_fmt = pd.to_datetime(r['data_atendimento']).strftime('%d/%m/%Y')
+                linhas_tabela += f"<tr><td>{dt_fmt}</td><td>{r['horario']}</td><td>{r['nome_cliente']}</td><td>{r['servico']}</td><td>R$ {r['valor']:.2f}</td><td>{r['forma_pagamento']}</td></tr>"
+
+            html_documento = f"""
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Relatório Financeiro - {usuario_atual}</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; color: #333; margin: 40px; }}
+                    h1 {{ color: #C5A059; border-bottom: 2px solid #C5A059; padding-bottom: 10px; }}
+                    .info {{ margin-bottom: 20px; font-size: 15px; }}
+                    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+                    th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }}
+                    th {{ background-color: #F4EFEA; color: #333; }}
+                    .totais {{ background-color: #F9F9F9; padding: 15px; border-radius: 8px; margin-top: 20px; }}
+                </style>
+            </head>
+            <body>
+                <h1>💅 {titulo_atual} — Relatório Financeiro</h1>
+                <div class="info">
+                    <p><b>Profissional:</b> {usuario_atual}</p>
+                    <p><b>Período:</b> {filtro_periodo} (Gerado em {date.today().strftime('%d/%m/%Y')})</p>
+                </div>
+                <div class="totais">
+                    <h3>Resumo do Período</h3>
+                    <p><b>Total Faturado:</b> R$ {total_ganho:.2f}</p>
+                    <p><b>Total de Atendimentos:</b> {qtd_atendimentos}</p>
+                    <p><b>Ticket Médio:</b> R$ {ticket_medio:.2f}</p>
+                    <h4>Faturamento por Forma de Pagamento:</h4>
+                    <ul>{pagto_html}</ul>
+                </div>
+                <h3>Detalhamento dos Atendimentos</h3>
+                <table>
+                    <tr>
+                        <th>Data</th>
+                        <th>Horário</th>
+                        <th>Cliente</th>
+                        <th>Serviço</th>
+                        <th>Valor</th>
+                        <th>Pagamento</th>
+                    </tr>
+                    {linhas_tabela}
+                </table>
+            </body>
+            </html>
+            """
+
+            st.download_button(
+                label="📥 Baixar Relatório em PDF / Impressão",
+                data=html_documento,
+                file_name=f"relatorio_financeiro_{usuario_atual}_{filtro_periodo.lower().replace(' ', '_')}.html",
+                mime="text/html",
+                help="Baixa o documento estilizado. Ao abrir no PC ou celular, basta clicar em Imprimir / Salvar como PDF."
+            )
+
         st.markdown("### 💳 Faturamento por Forma de Pagamento")
         if not df_filtrado.empty:
             pagto_resumo = df_filtrado.groupby("forma_pagamento")["valor"].sum().reset_index()
