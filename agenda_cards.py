@@ -156,7 +156,7 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO NOTION COMPACTO (CSS) ---
+# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO NOTION OTIMIZADO PARA CELULAR (CSS) ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
@@ -169,13 +169,13 @@ estilos_css = {
             .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #A88234 !important; }
             
-            /* Estilo Notion Compacto e Limpo para o Calendário (Sem cortes e fonte menor) */
+            /* Estilo Notion Card Perfeito para Calendário (Sem cortes e sem duplicar horas) */
             .fc-event {
                 background-color: #FFFFFF !important;
                 border: 1px solid #E3DDD5 !important;
                 border-left: 3px solid #C5A059 !important;
                 border-radius: 4px !important;
-                padding: 1px 3px !important;
+                padding: 2px 4px !important;
                 margin-bottom: 2px !important;
                 box-shadow: 0 1px 2px rgba(0,0,0,0.04);
             }
@@ -183,28 +183,25 @@ estilos_css = {
                 white-space: normal !important;
                 word-break: break-word !important;
                 font-size: 0.68rem !important;
-                font-weight: 500 !important;
+                font-weight: 600 !important;
                 color: #33322E !important;
             }
             .fc-daygrid-event {
                 white-space: normal !important;
                 align-items: normal !important;
             }
-            .fc-event-time {
-                font-size: 0.65rem !important;
-                font-weight: bold !important;
-                color: #A88234 !important;
-            }
             
-            /* Ajustes para Celular / Telas Pequenas */
+            /* Ajustes ultra-compactos para Celular / Telas Pequenas */
             @media (max-width: 768px) {
-                .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; padding-top: 1rem !important; }
-                h1 { font-size: 1.3rem !important; }
-                h2 { font-size: 1.1rem !important; }
-                h3 { font-size: 1.0rem !important; }
-                .fc-toolbar-title { font-size: 0.8rem !important; }
-                .fc-button { padding: 2px 3px !important; font-size: 0.65rem !important; }
-                .fc-event-title { font-size: 0.62rem !important; }
+                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; padding-top: 0.8rem !important; }
+                h1 { font-size: 1.2rem !important; }
+                h2 { font-size: 1.0rem !important; }
+                h3 { font-size: 0.95rem !important; }
+                .fc-toolbar-title { font-size: 0.78rem !important; }
+                .fc-button { padding: 2px 3px !important; font-size: 0.62rem !important; }
+                .fc-event { padding: 1px 2px !important; margin-bottom: 1px !important; }
+                .fc-event-title { font-size: 0.58rem !important; line-height: 1.1 !important; }
+                .fc-daygrid-day-number { font-size: 0.7rem !important; padding: 2px !important; }
             }
         </style>
     """,
@@ -216,10 +213,12 @@ estilos_css = {
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #E0E0E0 !important; }
             .stButton>button { background-color: #000000 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #000000 !important; }
-            .fc-event { background-color: #F9FAFB !important; border: 1px solid #E5E7EB !important; border-left: 3px solid #000000 !important; border-radius: 4px !important; padding: 1px 3px !important; }
-            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 500 !important; color: #111827 !important; }
-            .fc-event-time { font-size: 0.65rem !important; font-weight: bold !important; color: #374151 !important; }
-            @media (max-width: 768px) { .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; } }
+            .fc-event { background-color: #F9FAFB !important; border: 1px solid #E5E7EB !important; border-left: 3px solid #000000 !important; border-radius: 4px !important; padding: 2px 4px !important; }
+            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #111827 !important; }
+            @media (max-width: 768px) { 
+                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+                .fc-event-title { font-size: 0.58rem !important; }
+            }
         </style>
     """,
     "Nude / Rosé": """
@@ -228,10 +227,12 @@ estilos_css = {
             .stSidebar { background-color: #FFF0F2; }
             .stButton>button { background-color: #E8A5A5 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #D87070 !important; }
-            .fc-event { background-color: #FFFFFF !important; border: 1px solid #F5D0D0 !important; border-left: 3px solid #E8A5A5 !important; border-radius: 4px !important; padding: 1px 3px !important; }
-            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 500 !important; color: #4A3E3D !important; }
-            .fc-event-time { font-size: 0.65rem !important; font-weight: bold !important; color: #D87070 !important; }
-            @media (max-width: 768px) { .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; } }
+            .fc-event { background-color: #FFFFFF !important; border: 1px solid #F5D0D0 !important; border-left: 3px solid #E8A5A5 !important; border-radius: 4px !important; padding: 2px 4px !important; }
+            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #4A3E3D !important; }
+            @media (max-width: 768px) { 
+                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+                .fc-event-title { font-size: 0.58rem !important; }
+            }
         </style>
     """,
     "Dark Elegance": """
@@ -240,10 +241,12 @@ estilos_css = {
             .stSidebar { background-color: #1E1E1E; }
             .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #BB86FC !important; }
-            .fc-event { background-color: #1E1E1E !important; border: 1px solid #333333 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 1px 3px !important; }
-            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 500 !important; color: #E0E0E0 !important; }
-            .fc-event-time { font-size: 0.65rem !important; font-weight: bold !important; color: #BB86FC !important; }
-            @media (max-width: 768px) { .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; } }
+            .fc-event { background-color: #1E1E1E !important; border: 1px solid #333333 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 2px 4px !important; }
+            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #E0E0E0 !important; }
+            @media (max-width: 768px) { 
+                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+                .fc-event-title { font-size: 0.58rem !important; }
+            }
         </style>
     """,
     "Lavanda / Soft Purple": """
@@ -252,10 +255,12 @@ estilos_css = {
             .stSidebar { background-color: #EDE9FE; }
             .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #7C3AED !important; }
-            .fc-event { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-left: 3px solid #8B5CF6 !important; border-radius: 4px !important; padding: 1px 3px !important; }
-            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 500 !important; color: #3A354A !important; }
-            .fc-event-time { font-size: 0.65rem !important; font-weight: bold !important; color: #7C3AED !important; }
-            @media (max-width: 768px) { .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; } }
+            .fc-event { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-left: 3px solid #8B5CF6 !important; border-radius: 4px !important; padding: 2px 4px !important; }
+            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #3A354A !important; }
+            @media (max-width: 768px) { 
+                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+                .fc-event-title { font-size: 0.58rem !important; }
+            }
         </style>
     """,
 }
@@ -510,16 +515,19 @@ aba_agenda, aba_crm, aba_fin, aba_tarefas, aba_lixeira, aba_config = st.tabs(
 # ==========================================
 with aba_agenda:
     conn = sqlite3.connect("agenda_unhas_v2.db")
-    df_todos = pd.read_sql_query("SELECT * FROM agendamentos WHERE profissional = ?", conn, params=(usuario_atual,))
+    # Ordenado por data e horário para manter a organização correta dos cards
+    df_todos = pd.read_sql_query("SELECT * FROM agendamentos WHERE profissional = ? ORDER BY data_atendimento ASC, horario ASC", conn, params=(usuario_atual,))
     conn.close()
 
     eventos_calendario = []
     for _, row in df_todos.iterrows():
+        # Uso de allDay: True e formato limpo estilo Notion (sem duplicações de horário)
         eventos_calendario.append(
             {
-                "title": f"{row['nome_cliente']} ({row['servico']})",
-                "start": f"{row['data_atendimento']}T{row['horario']}:00",
-                "backgroundColor": "#F4EFEA",
+                "title": f"{row['horario']} - {row['nome_cliente']} ({row['servico']})",
+                "start": row['data_atendimento'],
+                "allDay": True,
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "#E3DDD5",
                 "textColor": "#33322E"
             }
