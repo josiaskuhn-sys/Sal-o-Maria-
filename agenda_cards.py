@@ -47,7 +47,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS clientes_retencao (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
-            telefone TEXT NOT NULL,
+            telefone TEXT,
             ciclo_dias INTEGER NOT NULL,
             ultimo_atendimento DATE NOT NULL,
             profissional TEXT DEFAULT 'Maria'
@@ -351,7 +351,7 @@ with st.sidebar:
             salvar = st.form_submit_button("Salvar Horário")
 
             if salvar:
-                tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else ""
+                tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else "Não informado"
                 if not nome_cliente:
                     st.error("Preencha o nome da cliente!")
                 else:
@@ -375,16 +375,15 @@ with st.sidebar:
                         ),
                     )
 
-                    # 2. Sincronizar automaticamente com o CRM (clientes_retencao)
-                    if tel_clean:
-                        c.execute("SELECT id FROM clientes_retencao WHERE telefone = ? AND profissional = ?", (tel_clean, usuario_atual))
-                        existente_crm = c.fetchone()
-                        data_iso = data_atendimento.strftime("%Y-%m-%d")
-                        if existente_crm:
-                            c.execute("UPDATE clientes_retencao SET ultimo_atendimento = ? WHERE id = ?", (data_iso, existente_crm[0]))
-                        else:
-                            c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) VALUES (?, ?, ?, ?, ?)", 
-                                      (nome_cliente, tel_clean, 21, data_iso, usuario_atual))
+                    # 2. Sincronizar automaticamente com o CRM
+                    c.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (nome_cliente, usuario_atual))
+                    existente_crm = c.fetchone()
+                    data_iso = data_atendimento.strftime("%Y-%m-%d")
+                    if existente_crm:
+                        c.execute("UPDATE clientes_retencao SET ultimo_atendimento = ?, telefone = ? WHERE id = ?", (data_iso, tel_clean, existente_crm[0]))
+                    else:
+                        c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) VALUES (?, ?, ?, ?, ?)", 
+                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual))
 
                     conn.commit()
                     conn.close()
@@ -402,18 +401,18 @@ with st.sidebar:
             salvar_crm = st.form_submit_button("Salvar no CRM")
 
             if salvar_crm:
-                tel_clean = "".join(filter(str.isdigit, str(telefone)))
-                if not nome or not tel_clean:
-                    st.error("Preencha o Nome e WhatsApp válido!")
+                tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else "Não informado"
+                if not nome:
+                    st.error("Preencha o Nome da cliente!")
                 else:
                     conn = sqlite3.connect("agenda_unhas_v2.db")
                     c = conn.cursor()
                     data_iso = ultimo_atendimento.strftime("%Y-%m-%d")
-                    c.execute("SELECT id FROM clientes_retencao WHERE telefone = ? AND profissional = ?", (tel_clean, usuario_atual))
+                    c.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (nome, usuario_atual))
                     existente = c.fetchone()
 
                     if existente:
-                        c.execute("UPDATE clientes_retencao SET nome = ?, ciclo_dias = ?, ultimo_atendimento = ? WHERE id = ?", (nome, ciclo_dias, data_iso, existente[0]))
+                        c.execute("UPDATE clientes_retencao SET ciclo_dias = ?, ultimo_atendimento = ?, telefone = ? WHERE id = ?", (ciclo_dias, data_iso, tel_clean, existente[0]))
                         st.success(f"Cadastro de {nome} atualizado!")
                     else:
                         c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) VALUES (?, ?, ?, ?, ?)", (nome, tel_clean, ciclo_dias, data_iso, usuario_atual))
@@ -642,10 +641,27 @@ with aba_agenda:
 
                     if row["telefone"]:
                         tel_digits = "".join(filter(str.isdigit, str(row["telefone"])))
-                        if tel_digits:
+                        if tel_digits and tel_digits != "Naoinformado":
                             msg = f"Olá {row['nome_cliente']}! Confirmado seu horário para {row['servico']} hoje às {row['horario']}?"
                             link_wa = f"https://wa.me/55{tel_digits}?text={msg.replace(' ', '%20')}"
                             st.markdown(f"[💬 Mandar Lembrete no WhatsApp]({link_wa})")
+
+                    # Botão direto para adicionar/atualizar no CRM a partir do próprio cartão do agendamento
+                    if st.button("➕ Adicionar/Atualizar no CRM", key=f"btn_crm_card_{row['id']}"):
+                        conn_c = sqlite3.connect("agenda_unhas_v2.db")
+                        c_cursor = conn_c.cursor()
+                        c_cursor.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (row['nome_cliente'], usuario_atual))
+                        cli_existente = c_cursor.fetchone()
+                        tel_reg = row['telefone'] if row['telefone'] else "Não informado"
+                        if cli_existente:
+                            c_cursor.execute("UPDATE clientes_retencao SET ultimo_atendimento = ?, telefone = ? WHERE id = ?", (row['data_atendimento'], tel_reg, cli_existente[0]))
+                        else:
+                            c_cursor.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) VALUES (?, ?, ?, ?, ?)", 
+                                             (row['nome_cliente'], tel_reg, 21, row['data_atendimento'], usuario_atual))
+                        conn_c.commit()
+                        conn_c.close()
+                        st.success(f"Cliente {row['nome_cliente']} adicionada/atualizada no CRM com sucesso!")
+                        st.rerun()
 
                     novo_status = st.selectbox(
                         "Status:", ["Agendado", "Confirmado", "Realizado", "Cancelado"],
@@ -697,9 +713,11 @@ with aba_crm:
                 with st.container(border=True):
                     st.markdown(f"### 👤 {row['nome']}")
                     st.write(f"📱 {row['telefone']} | Ciclo: {row['ciclo_dias']} dias")
-                    msg = f"Oi {row['nome']}! Passando para avisar que já deu o prazo da sua manutenção!"
-                    link_wa = f"https://wa.me/55{row['telefone']}?text={msg.replace(' ', '%20')}"
-                    st.markdown(f"[💬 WhatsApp]({link_wa})")
+                    digits_cli = "".join(filter(str.isdigit, str(row['telefone']))) if row['telefone'] else ""
+                    if digits_cli:
+                        msg = f"Oi {row['nome']}! Passando para avisar que já deu o prazo da sua manutenção!"
+                        link_wa = f"https://wa.me/55{digits_cli}?text={msg.replace(' ', '%20')}"
+                        st.markdown(f"[💬 WhatsApp]({link_wa})")
             st.divider()
 
         hoje = date.today()
@@ -723,12 +741,15 @@ with aba_crm:
                     with st.container(border=True):
                         st.markdown(f"### 👤 {row['nome']}")
                         st.write(f"🔁 Ciclo: {row['ciclo_dias']} dias | Previsão: {row['proximo_atendimento'].strftime('%d/%m/%Y')}")
-                        msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já deu o prazo da sua manutenção essa semana!"
-                        link_wa = f"https://wa.me/55{row['telefone']}?text={msg.replace(' ', '%20')}"
-                        
+                        digits_cli = "".join(filter(str.isdigit, str(row['telefone']))) if row['telefone'] else ""
                         col_b1, col_b2 = st.columns(2)
                         with col_b1:
-                            st.markdown(f"[💬 WhatsApp]({link_wa})")
+                            if digits_cli:
+                                msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já deu o prazo da sua manutenção essa semana!"
+                                link_wa = f"https://wa.me/55{digits_cli}?text={msg.replace(' ', '%20')}"
+                                st.markdown(f"[💬 WhatsApp]({link_wa})")
+                            else:
+                                st.write("📱 Sem WhatsApp cadastrado")
                         with col_b2:
                             if st.button("✅ Atendido Hoje", key=f"renovar_{row['id']}"):
                                 conn = sqlite3.connect("agenda_unhas_v2.db")
