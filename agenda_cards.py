@@ -375,7 +375,7 @@ with st.sidebar:
                         ),
                     )
 
-                    # 2. Sincronizar automaticamente com o CRM
+                    # 2. Sincronizar automaticamente com o CRM (ciclo padrão 21 dias)
                     c.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (nome_cliente, usuario_atual))
                     existente_crm = c.fetchone()
                     data_iso = data_atendimento.strftime("%Y-%m-%d")
@@ -395,12 +395,20 @@ with st.sidebar:
         with st.form("form_cliente_crm", clear_on_submit=True):
             nome = st.text_input("Nome da Cliente*")
             telefone = st.text_input("WhatsApp*", placeholder="54991341375")
-            ciclo_dias = st.selectbox("Ciclo de Retorno (Dias)*", [15, 21, 25, 30], index=1)
+            
+            st.write("Ciclo de Retorno (Dias)*:")
+            col_cc1, col_cc2 = st.columns(2)
+            with col_cc1:
+                ciclo_op_crm = st.selectbox("Opção fixa", [15, 21, 25, 30], index=1)
+            with col_cc2:
+                ciclo_dig_crm = st.number_input("Ou digite", min_value=0, max_value=365, value=0, step=1)
+
             ultimo_atendimento = st.date_input("Último Atendimento*", value=date.today(), format="DD/MM/YYYY")
 
             salvar_crm = st.form_submit_button("Salvar no CRM")
 
             if salvar_crm:
+                ciclo_dias = int(ciclo_dig_crm) if ciclo_dig_crm > 0 else int(ciclo_op_crm)
                 tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else "Não informado"
                 if not nome:
                     st.error("Preencha o Nome da cliente!")
@@ -646,21 +654,43 @@ with aba_agenda:
                             link_wa = f"https://wa.me/55{tel_digits}?text={msg.replace(' ', '%20')}"
                             st.markdown(f"[💬 Mandar Lembrete no WhatsApp]({link_wa})")
 
-                    # Botão direto para adicionar/atualizar no CRM a partir do próprio cartão do agendamento
+                    # Seletor fixo e campo de digitação lado a lado para o CRM
+                    st.write("🔁 **Ciclo de Retorno:**")
+                    col_c1, col_c2 = st.columns(2)
+                    with col_c1:
+                        ciclo_op = st.selectbox(
+                            "Opção fixa:",
+                            [15, 21, 25, 30],
+                            index=1,
+                            key=f"ciclo_op_{row['id']}"
+                        )
+                    with col_c2:
+                        ciclo_dig = st.number_input(
+                            "Ou digite dias:",
+                            min_value=0,
+                            max_value=365,
+                            value=0,
+                            step=1,
+                            key=f"ciclo_dig_{row['id']}"
+                        )
+
                     if st.button("➕ Adicionar/Atualizar no CRM", key=f"btn_crm_card_{row['id']}"):
+                        # Define o ciclo: se digitou algo maior que 0, usa o valor digitado, senão usa a opção fixa
+                        ciclo_card = int(ciclo_dig) if ciclo_dig > 0 else int(ciclo_op)
+
                         conn_c = sqlite3.connect("agenda_unhas_v2.db")
                         c_cursor = conn_c.cursor()
                         c_cursor.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (row['nome_cliente'], usuario_atual))
                         cli_existente = c_cursor.fetchone()
                         tel_reg = row['telefone'] if row['telefone'] else "Não informado"
                         if cli_existente:
-                            c_cursor.execute("UPDATE clientes_retencao SET ultimo_atendimento = ?, telefone = ? WHERE id = ?", (row['data_atendimento'], tel_reg, cli_existente[0]))
+                            c_cursor.execute("UPDATE clientes_retencao SET ultimo_atendimento = ?, ciclo_dias = ?, telefone = ? WHERE id = ?", (row['data_atendimento'], ciclo_card, tel_reg, cli_existente[0]))
                         else:
                             c_cursor.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) VALUES (?, ?, ?, ?, ?)", 
-                                             (row['nome_cliente'], tel_reg, 21, row['data_atendimento'], usuario_atual))
+                                             (row['nome_cliente'], tel_reg, ciclo_card, row['data_atendimento'], usuario_atual))
                         conn_c.commit()
                         conn_c.close()
-                        st.success(f"Cliente {row['nome_cliente']} adicionada/atualizada no CRM com sucesso!")
+                        st.success(f"Cliente {row['nome_cliente']} adicionada/atualizada no CRM com ciclo de {ciclo_card} dias!")
                         st.rerun()
 
                     novo_status = st.selectbox(
