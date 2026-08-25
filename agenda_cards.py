@@ -169,7 +169,7 @@ estilos_css = {
             .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #A88234 !important; }
             
-            /* Estilo Notion Card Perfeito para Calendário (Sem cortes e sem duplicar horas) */
+            /* Estilo Notion Card Perfeito para Calendário */
             .fc-event {
                 background-color: #FFFFFF !important;
                 border: 1px solid #E3DDD5 !important;
@@ -191,17 +191,42 @@ estilos_css = {
                 align-items: normal !important;
             }
             
-            /* Ajustes ultra-compactos para Celular / Telas Pequenas */
+            /* Ajustes ultra-otimizados para Celular / Telas Pequenas */
             @media (max-width: 768px) {
-                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; padding-top: 0.8rem !important; }
+                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; padding-top: 0.6rem !important; }
                 h1 { font-size: 1.2rem !important; }
                 h2 { font-size: 1.0rem !important; }
                 h3 { font-size: 0.95rem !important; }
-                .fc-toolbar-title { font-size: 0.78rem !important; }
-                .fc-button { padding: 2px 3px !important; font-size: 0.62rem !important; }
+                
+                /* Calendário Header Responsivo (Evita cortes e quebras feias) */
+                .fc-toolbar.fc-header-toolbar {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    gap: 6px !important;
+                    margin-bottom: 0.5rem !important;
+                }
+                .fc-toolbar-chunk {
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    flex-wrap: nowrap !important;
+                    width: 100% !important;
+                }
+                .fc-toolbar-title {
+                    font-size: 0.9rem !important;
+                    font-weight: bold !important;
+                    white-space: nowrap !important;
+                }
+                .fc-button {
+                    padding: 3px 5px !important;
+                    font-size: 0.65rem !important;
+                    line-height: 1.1 !important;
+                }
+                
                 .fc-event { padding: 1px 2px !important; margin-bottom: 1px !important; }
                 .fc-event-title { font-size: 0.58rem !important; line-height: 1.1 !important; }
-                .fc-daygrid-day-number { font-size: 0.7rem !important; padding: 2px !important; }
+                .fc-daygrid-day-number { font-size: 0.68rem !important; padding: 2px !important; }
             }
         </style>
     """,
@@ -216,7 +241,11 @@ estilos_css = {
             .fc-event { background-color: #F9FAFB !important; border: 1px solid #E5E7EB !important; border-left: 3px solid #000000 !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #111827 !important; }
             @media (max-width: 768px) { 
-                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
+                .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; }
+                .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+                .fc-toolbar-title { font-size: 0.9rem !important; white-space: nowrap !important; }
+                .fc-button { padding: 3px 5px !important; font-size: 0.65rem !important; }
                 .fc-event-title { font-size: 0.58rem !important; }
             }
         </style>
@@ -230,7 +259,11 @@ estilos_css = {
             .fc-event { background-color: #FFFFFF !important; border: 1px solid #F5D0D0 !important; border-left: 3px solid #E8A5A5 !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #4A3E3D !important; }
             @media (max-width: 768px) { 
-                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
+                .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; }
+                .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+                .fc-toolbar-title { font-size: 0.9rem !important; white-space: nowrap !important; }
+                .fc-button { padding: 3px 5px !important; font-size: 0.65rem !important; }
                 .fc-event-title { font-size: 0.58rem !important; }
             }
         </style>
@@ -244,7 +277,11 @@ estilos_css = {
             .fc-event { background-color: #1E1E1E !important; border: 1px solid #333333 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #E0E0E0 !important; }
             @media (max-width: 768px) { 
-                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
+                .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; }
+                .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+                .fc-toolbar-title { font-size: 0.9rem !important; white-space: nowrap !important; }
+                .fc-button { padding: 3px 5px !important; font-size: 0.65rem !important; }
                 .fc-event-title { font-size: 0.58rem !important; }
             }
         </style>
@@ -258,7 +295,11 @@ estilos_css = {
             .fc-event { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-left: 3px solid #8B5CF6 !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #3A354A !important; }
             @media (max-width: 768px) { 
-                .block-container { padding-left: 0.4rem !important; padding-right: 0.4rem !important; }
+                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
+                .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; }
+                .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+                .fc-toolbar-title { font-size: 0.9rem !important; white-space: nowrap !important; }
+                .fc-button { padding: 3px 5px !important; font-size: 0.65rem !important; }
                 .fc-event-title { font-size: 0.58rem !important; }
             }
         </style>
@@ -515,13 +556,11 @@ aba_agenda, aba_crm, aba_fin, aba_tarefas, aba_lixeira, aba_config = st.tabs(
 # ==========================================
 with aba_agenda:
     conn = sqlite3.connect("agenda_unhas_v2.db")
-    # Ordenado por data e horário para manter a organização correta dos cards
     df_todos = pd.read_sql_query("SELECT * FROM agendamentos WHERE profissional = ? ORDER BY data_atendimento ASC, horario ASC", conn, params=(usuario_atual,))
     conn.close()
 
     eventos_calendario = []
     for _, row in df_todos.iterrows():
-        # Uso de allDay: True e formato limpo estilo Notion (sem duplicações de horário)
         eventos_calendario.append(
             {
                 "title": f"{row['horario']} - {row['nome_cliente']} ({row['servico']})",
