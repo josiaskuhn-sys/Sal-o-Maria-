@@ -675,7 +675,6 @@ with aba_agenda:
                         )
 
                     if st.button("➕ Adicionar/Atualizar no CRM", key=f"btn_crm_card_{row['id']}"):
-                        # Define o ciclo: se digitou algo maior que 0, usa o valor digitado, senão usa a opção fixa
                         ciclo_card = int(ciclo_dig) if ciclo_dig > 0 else int(ciclo_op)
 
                         conn_c = sqlite3.connect("agenda_unhas_v2.db")
@@ -793,6 +792,28 @@ with aba_crm:
             for _, row in df_crm.iterrows():
                 with st.expander(f"👤 {row['nome']} (Retorno: {row['proximo_atendimento'].strftime('%d/%m/%Y')})"):
                     st.write(f"📱 WhatsApp: {row['telefone']} | Ciclo: {row['ciclo_dias']} dias")
+                    
+                    st.markdown("---")
+                    st.write("✏️ **Editar Ciclo de Retorno:**")
+                    c_ed1, c_ed2 = st.columns(2)
+                    with c_ed1:
+                        padroes = [15, 21, 25, 30]
+                        idx_padrao = padroes.index(row['ciclo_dias']) if row['ciclo_dias'] in padroes else 1
+                        novo_ciclo_op = st.selectbox("Opção fixa", padroes, index=idx_padrao, key=f"ed_op_{row['id']}")
+                    with c_ed2:
+                        novo_ciclo_dig = st.number_input("Ou digite dias", min_value=0, max_value=365, value=0, step=1, key=f"ed_dig_{row['id']}")
+
+                    if st.button("💾 Salvar Novo Ciclo", key=f"btn_salvar_ciclo_{row['id']}"):
+                        novo_ciclo_final = int(novo_ciclo_dig) if novo_ciclo_dig > 0 else int(novo_ciclo_op)
+                        conn_e = sqlite3.connect("agenda_unhas_v2.db")
+                        c_e = conn_e.cursor()
+                        c_e.execute("UPDATE clientes_retencao SET ciclo_dias = ? WHERE id = ?", (novo_ciclo_final, row['id']))
+                        conn_e.commit()
+                        conn_e.close()
+                        st.success(f"Ciclo da cliente {row['nome']} alterado para {novo_ciclo_final} dias!")
+                        st.rerun()
+
+                    st.markdown("---")
                     if st.button("🗑️ Excluir do CRM", key=f"del_crm_{row['id']}"):
                         conn = sqlite3.connect("agenda_unhas_v2.db")
                         c = conn.cursor()
