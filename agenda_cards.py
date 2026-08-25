@@ -156,7 +156,7 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO NOTION (FONTE COMPACTA) ---
+# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO MOBILE OTIMIZADO (CSS) ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
@@ -190,8 +190,6 @@ estilos_css = {
                 white-space: normal !important;
                 align-items: normal !important;
             }
-            
-            /* Título do mês estilo Notion (Compacto e limpo) */
             .fc-toolbar-title {
                 font-size: 1.05rem !important;
                 font-weight: 600 !important;
@@ -199,38 +197,50 @@ estilos_css = {
                 color: #33322E !important;
             }
             
-            /* Ajustes otimizados para Celular / Telas Pequenas */
+            /* Otimização ULTRA FORÇADA para Celular / iPhone */
             @media (max-width: 768px) {
-                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; padding-top: 0.6rem !important; }
-                h1 { font-size: 1.2rem !important; }
-                h2 { font-size: 1.0rem !important; }
-                h3 { font-size: 0.95rem !important; }
+                .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; padding-top: 0.5rem !important; }
+                h1 { font-size: 1.15rem !important; }
+                h2 { font-size: 0.95rem !important; }
+                h3 { font-size: 0.9rem !important; }
                 
-                .fc-toolbar.fc-header-toolbar {
+                /* Força o cabeçalho do calendário a empilhar e ajustar botões no iPhone sem cortar */
+                .fc .fc-toolbar.fc-header-toolbar {
                     display: flex !important;
                     flex-direction: column !important;
                     align-items: center !important;
-                    gap: 5px !important;
+                    justify-content: center !important;
+                    gap: 6px !important;
                     margin-bottom: 0.4rem !important;
+                    width: 100% !important;
                 }
-                .fc-toolbar-chunk {
+                .fc .fc-toolbar-chunk {
                     display: flex !important;
                     justify-content: center !important;
                     align-items: center !important;
                     width: 100% !important;
+                    flex-wrap: wrap !important;
                 }
-                .fc-toolbar-title {
-                    font-size: 0.82rem !important;
+                .fc .fc-toolbar-title {
+                    font-size: 0.8rem !important;
                     white-space: nowrap !important;
+                    margin: 2px 0 !important;
                 }
-                .fc-button {
+                .fc .fc-button {
                     padding: 2px 4px !important;
-                    font-size: 0.62rem !important;
+                    font-size: 0.58rem !important;
+                    line-height: 1.1 !important;
+                    height: 24px !important;
+                }
+                .fc .fc-button-group {
+                    display: flex !important;
+                    justify-content: center !important;
                 }
                 
                 .fc-event { padding: 1px 2px !important; margin-bottom: 1px !important; }
-                .fc-event-title { font-size: 0.58rem !important; line-height: 1.1 !important; }
-                .fc-daygrid-day-number { font-size: 0.68rem !important; padding: 2px !important; }
+                .fc-event-title { font-size: 0.55rem !important; line-height: 1.05 !important; }
+                .fc-daygrid-day-number { font-size: 0.65rem !important; padding: 1px !important; }
+                .fc-col-header-cell-cushion { font-size: 0.65rem !important; padding: 2px !important; }
             }
         </style>
     """,
@@ -246,12 +256,12 @@ estilos_css = {
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #111827 !important; }
             .fc-toolbar-title { font-size: 1.05rem !important; font-weight: 600 !important; white-space: nowrap !important; }
             @media (max-width: 768px) { 
-                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
-                .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 5px !important; }
-                .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
-                .fc-toolbar-title { font-size: 0.82rem !important; white-space: nowrap !important; }
-                .fc-button { padding: 2px 4px !important; font-size: 0.62rem !important; }
-                .fc-event-title { font-size: 0.58rem !important; }
+                .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
+                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; width: 100% !important; }
+                .fc .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+                .fc .fc-toolbar-title { font-size: 0.8rem !important; white-space: nowrap !important; }
+                .fc .fc-button { padding: 2px 4px !important; font-size: 0.58rem !important; height: 24px !important; }
+                .fc-event-title { font-size: 0.55rem !important; }
             }
         </style>
     """,
@@ -265,12 +275,12 @@ estilos_css = {
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #4A3E3D !important; }
             .fc-toolbar-title { font-size: 1.05rem !important; font-weight: 600 !important; white-space: nowrap !important; }
             @media (max-width: 768px) { 
-                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
-                .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 5px !important; }
-                .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
-                .fc-toolbar-title { font-size: 0.82rem !important; white-space: nowrap !important; }
-                .fc-button { padding: 2px 4px !important; font-size: 0.62rem !important; }
-                .fc-event-title { font-size: 0.58rem !important; }
+                .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
+                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; width: 100% !important; }
+                .fc .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+                .fc .fc-toolbar-title { font-size: 0.8rem !important; white-space: nowrap !important; }
+                .fc .fc-button { padding: 2px 4px !important; font-size: 0.58rem !important; height: 24px !important; }
+                .fc-event-title { font-size: 0.55rem !important; }
             }
         </style>
     """,
@@ -284,12 +294,12 @@ estilos_css = {
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #E0E0E0 !important; }
             .fc-toolbar-title { font-size: 1.05rem !important; font-weight: 600 !important; white-space: nowrap !important; color: #E0E0E0 !important; }
             @media (max-width: 768px) { 
-                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
-                .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 5px !important; }
-                .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
-                .fc-toolbar-title { font-size: 0.82rem !important; white-space: nowrap !important; }
-                .fc-button { padding: 2px 4px !important; font-size: 0.62rem !important; }
-                .fc-event-title { font-size: 0.58rem !important; }
+                .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
+                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; width: 100% !important; }
+                .fc .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+                .fc .fc-toolbar-title { font-size: 0.8rem !important; white-space: nowrap !important; }
+                .fc .fc-button { padding: 2px 4px !important; font-size: 0.58rem !important; height: 24px !important; }
+                .fc-event-title { font-size: 0.55rem !important; }
             }
         </style>
     """,
@@ -303,12 +313,12 @@ estilos_css = {
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #3A354A !important; }
             .fc-toolbar-title { font-size: 1.05rem !important; font-weight: 600 !important; white-space: nowrap !important; }
             @media (max-width: 768px) { 
-                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
-                .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 5px !important; }
-                .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
-                .fc-toolbar-title { font-size: 0.82rem !important; white-space: nowrap !important; }
-                .fc-button { padding: 2px 4px !important; font-size: 0.62rem !important; }
-                .fc-event-title { font-size: 0.58rem !important; }
+                .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
+                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; width: 100% !important; }
+                .fc .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+                .fc .fc-toolbar-title { font-size: 0.8rem !important; white-space: nowrap !important; }
+                .fc .fc-button { padding: 2px 4px !important; font-size: 0.58rem !important; height: 24px !important; }
+                .fc-event-title { font-size: 0.55rem !important; }
             }
         </style>
     """,
