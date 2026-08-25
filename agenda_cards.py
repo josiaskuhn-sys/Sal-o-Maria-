@@ -156,7 +156,7 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO MOBILE OTIMIZADO (CSS) ---
+# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO NOTION MOBILE (IOS/ANDROID) ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
@@ -191,27 +191,28 @@ estilos_css = {
                 align-items: normal !important;
             }
             .fc-toolbar-title {
-                font-size: 1.05rem !important;
+                font-size: 1rem !important;
                 font-weight: 600 !important;
                 white-space: nowrap !important;
                 color: #33322E !important;
             }
             
-            /* Otimização ULTRA FORÇADA para Celular / iPhone */
+            /* Otimização RIGOROSA para Celular / iPhone / Safari */
             @media (max-width: 768px) {
-                .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; padding-top: 0.5rem !important; }
-                h1 { font-size: 1.15rem !important; }
+                .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; padding-top: 0.4rem !important; }
+                h1 { font-size: 1.1rem !important; }
                 h2 { font-size: 0.95rem !important; }
-                h3 { font-size: 0.9rem !important; }
+                h3 { font-size: 0.85rem !important; }
                 
-                /* Força o cabeçalho do calendário a empilhar e ajustar botões no iPhone sem cortar */
+                /* Força o calendário a se comportar de forma compacta no iOS */
+                .fc { font-size: 10px !important; }
                 .fc .fc-toolbar.fc-header-toolbar {
                     display: flex !important;
                     flex-direction: column !important;
                     align-items: center !important;
                     justify-content: center !important;
-                    gap: 6px !important;
-                    margin-bottom: 0.4rem !important;
+                    gap: 4px !important;
+                    margin-bottom: 0.3rem !important;
                     width: 100% !important;
                 }
                 .fc .fc-toolbar-chunk {
@@ -220,27 +221,29 @@ estilos_css = {
                     align-items: center !important;
                     width: 100% !important;
                     flex-wrap: wrap !important;
+                    gap: 2px !important;
                 }
                 .fc .fc-toolbar-title {
-                    font-size: 0.8rem !important;
+                    font-size: 0.75rem !important;
                     white-space: nowrap !important;
-                    margin: 2px 0 !important;
+                    margin: 1px 0 !important;
                 }
                 .fc .fc-button {
-                    padding: 2px 4px !important;
-                    font-size: 0.58rem !important;
-                    line-height: 1.1 !important;
-                    height: 24px !important;
+                    padding: 2px 3px !important;
+                    font-size: 0.52rem !important;
+                    height: 20px !important;
+                    line-height: 1 !important;
+                    border-radius: 3px !important;
                 }
                 .fc .fc-button-group {
                     display: flex !important;
-                    justify-content: center !important;
+                    gap: 1px !important;
                 }
                 
                 .fc-event { padding: 1px 2px !important; margin-bottom: 1px !important; }
-                .fc-event-title { font-size: 0.55rem !important; line-height: 1.05 !important; }
-                .fc-daygrid-day-number { font-size: 0.65rem !important; padding: 1px !important; }
-                .fc-col-header-cell-cushion { font-size: 0.65rem !important; padding: 2px !important; }
+                .fc-event-title { font-size: 0.52rem !important; line-height: 1.0 !important; }
+                .fc-daygrid-day-number { font-size: 0.62rem !important; padding: 1px !important; }
+                .fc-col-header-cell-cushion { font-size: 0.62rem !important; padding: 2px !important; }
             }
         </style>
     """,
@@ -254,14 +257,15 @@ estilos_css = {
             div[data-testid="stMetricValue"] { color: #000000 !important; }
             .fc-event { background-color: #F9FAFB !important; border: 1px solid #E5E7EB !important; border-left: 3px solid #000000 !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #111827 !important; }
-            .fc-toolbar-title { font-size: 1.05rem !important; font-weight: 600 !important; white-space: nowrap !important; }
+            .fc-toolbar-title { font-size: 1rem !important; font-weight: 600 !important; white-space: nowrap !important; }
             @media (max-width: 768px) { 
                 .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
-                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; width: 100% !important; }
+                .fc { font-size: 10px !important; }
+                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 4px !important; width: 100% !important; }
                 .fc .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
-                .fc .fc-toolbar-title { font-size: 0.8rem !important; white-space: nowrap !important; }
-                .fc .fc-button { padding: 2px 4px !important; font-size: 0.58rem !important; height: 24px !important; }
-                .fc-event-title { font-size: 0.55rem !important; }
+                .fc .fc-toolbar-title { font-size: 0.75rem !important; white-space: nowrap !important; }
+                .fc .fc-button { padding: 2px 3px !important; font-size: 0.52rem !important; height: 20px !important; }
+                .fc-event-title { font-size: 0.52rem !important; }
             }
         </style>
     """,
@@ -273,14 +277,15 @@ estilos_css = {
             div[data-testid="stMetricValue"] { color: #D87070 !important; }
             .fc-event { background-color: #FFFFFF !important; border: 1px solid #F5D0D0 !important; border-left: 3px solid #E8A5A5 !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #4A3E3D !important; }
-            .fc-toolbar-title { font-size: 1.05rem !important; font-weight: 600 !important; white-space: nowrap !important; }
+            .fc-toolbar-title { font-size: 1rem !important; font-weight: 600 !important; white-space: nowrap !important; }
             @media (max-width: 768px) { 
                 .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
-                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; width: 100% !important; }
+                .fc { font-size: 10px !important; }
+                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 4px !important; width: 100% !important; }
                 .fc .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
-                .fc .fc-toolbar-title { font-size: 0.8rem !important; white-space: nowrap !important; }
-                .fc .fc-button { padding: 2px 4px !important; font-size: 0.58rem !important; height: 24px !important; }
-                .fc-event-title { font-size: 0.55rem !important; }
+                .fc .fc-toolbar-title { font-size: 0.75rem !important; white-space: nowrap !important; }
+                .fc .fc-button { padding: 2px 3px !important; font-size: 0.52rem !important; height: 20px !important; }
+                .fc-event-title { font-size: 0.52rem !important; }
             }
         </style>
     """,
@@ -292,14 +297,15 @@ estilos_css = {
             div[data-testid="stMetricValue"] { color: #BB86FC !important; }
             .fc-event { background-color: #1E1E1E !important; border: 1px solid #333333 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #E0E0E0 !important; }
-            .fc-toolbar-title { font-size: 1.05rem !important; font-weight: 600 !important; white-space: nowrap !important; color: #E0E0E0 !important; }
+            .fc-toolbar-title { font-size: 1rem !important; font-weight: 600 !important; white-space: nowrap !important; color: #E0E0E0 !important; }
             @media (max-width: 768px) { 
                 .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
-                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; width: 100% !important; }
+                .fc { font-size: 10px !important; }
+                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 4px !important; width: 100% !important; }
                 .fc .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
-                .fc .fc-toolbar-title { font-size: 0.8rem !important; white-space: nowrap !important; }
-                .fc .fc-button { padding: 2px 4px !important; font-size: 0.58rem !important; height: 24px !important; }
-                .fc-event-title { font-size: 0.55rem !important; }
+                .fc .fc-toolbar-title { font-size: 0.75rem !important; white-space: nowrap !important; }
+                .fc .fc-button { padding: 2px 3px !important; font-size: 0.52rem !important; height: 20px !important; }
+                .fc-event-title { font-size: 0.52rem !important; }
             }
         </style>
     """,
@@ -311,14 +317,15 @@ estilos_css = {
             div[data-testid="stMetricValue"] { color: #7C3AED !important; }
             .fc-event { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-left: 3px solid #8B5CF6 !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #3A354A !important; }
-            .fc-toolbar-title { font-size: 1.05rem !important; font-weight: 600 !important; white-space: nowrap !important; }
+            .fc-toolbar-title { font-size: 1rem !important; font-weight: 600 !important; white-space: nowrap !important; }
             @media (max-width: 768px) { 
                 .block-container { padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
-                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 6px !important; width: 100% !important; }
+                .fc { font-size: 10px !important; }
+                .fc .fc-toolbar.fc-header-toolbar { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 4px !important; width: 100% !important; }
                 .fc .fc-toolbar-chunk { display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
-                .fc .fc-toolbar-title { font-size: 0.8rem !important; white-space: nowrap !important; }
-                .fc .fc-button { padding: 2px 4px !important; font-size: 0.58rem !important; height: 24px !important; }
-                .fc-event-title { font-size: 0.55rem !important; }
+                .fc .fc-toolbar-title { font-size: 0.75rem !important; white-space: nowrap !important; }
+                .fc .fc-button { padding: 2px 3px !important; font-size: 0.52rem !important; height: 20px !important; }
+                .fc-event-title { font-size: 0.52rem !important; }
             }
         </style>
     """,
