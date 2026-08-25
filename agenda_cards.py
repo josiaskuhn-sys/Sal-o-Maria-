@@ -396,19 +396,17 @@ with st.sidebar:
             nome = st.text_input("Nome da Cliente*")
             telefone = st.text_input("WhatsApp*", placeholder="54991341375")
             
-            st.write("Ciclo de Retorno (Dias)*:")
-            col_cc1, col_cc2 = st.columns(2)
-            with col_cc1:
-                ciclo_op_crm = st.selectbox("Opção fixa", [15, 21, 25, 30], index=1)
-            with col_cc2:
-                ciclo_dig_crm = st.number_input("Ou digite", min_value=0, max_value=365, value=0, step=1)
+            ciclo_opcao_crm = st.selectbox("Ciclo de Retorno (Dias)*", [15, 21, 25, 30, "Outro (Personalizado)"], index=1, key="sidebar_crm_ciclo_op")
+            if ciclo_opcao_crm == "Outro (Personalizado)":
+                ciclo_dias_crm = st.number_input("Digite a quantidade de dias:", min_value=1, max_value=365, value=10, step=1, key="sidebar_crm_ciclo_dig")
+            else:
+                ciclo_dias_crm = int(ciclo_opcao_crm)
 
             ultimo_atendimento = st.date_input("Último Atendimento*", value=date.today(), format="DD/MM/YYYY")
 
             salvar_crm = st.form_submit_button("Salvar no CRM")
 
             if salvar_crm:
-                ciclo_dias = int(ciclo_dig_crm) if ciclo_dig_crm > 0 else int(ciclo_op_crm)
                 tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else "Não informado"
                 if not nome:
                     st.error("Preencha o Nome da cliente!")
@@ -420,10 +418,10 @@ with st.sidebar:
                     existente = c.fetchone()
 
                     if existente:
-                        c.execute("UPDATE clientes_retencao SET ciclo_dias = ?, ultimo_atendimento = ?, telefone = ? WHERE id = ?", (ciclo_dias, data_iso, tel_clean, existente[0]))
+                        c.execute("UPDATE clientes_retencao SET ciclo_dias = ?, ultimo_atendimento = ?, telefone = ? WHERE id = ?", (ciclo_dias_crm, data_iso, tel_clean, existente[0]))
                         st.success(f"Cadastro de {nome} atualizado!")
                     else:
-                        c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) VALUES (?, ?, ?, ?, ?)", (nome, tel_clean, ciclo_dias, data_iso, usuario_atual))
+                        c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) VALUES (?, ?, ?, ?, ?)", (nome, tel_clean, ciclo_dias_crm, data_iso, usuario_atual))
                         st.success(f"Cliente {nome} salva!")
                     conn.commit()
                     conn.close()
@@ -654,29 +652,20 @@ with aba_agenda:
                             link_wa = f"https://wa.me/55{tel_digits}?text={msg.replace(' ', '%20')}"
                             st.markdown(f"[💬 Mandar Lembrete no WhatsApp]({link_wa})")
 
-                    # Seletor fixo e campo de digitação lado a lado para o CRM
-                    st.write("🔁 **Ciclo de Retorno:**")
-                    col_c1, col_c2 = st.columns(2)
-                    with col_c1:
-                        ciclo_op = st.selectbox(
-                            "Opção fixa:",
-                            [15, 21, 25, 30],
-                            index=1,
-                            key=f"ciclo_op_{row['id']}"
-                        )
-                    with col_c2:
-                        ciclo_dig = st.number_input(
-                            "Ou digite dias:",
-                            min_value=0,
-                            max_value=365,
-                            value=0,
-                            step=1,
-                            key=f"ciclo_dig_{row['id']}"
-                        )
+                    # Seletor inteligente e intuitivo de ciclo (Fixo ou Personalizado)
+                    ciclo_escolha = st.selectbox(
+                        "🔁 Ciclo de Retorno:",
+                        [15, 21, 25, 30, "Outro (Personalizado)"],
+                        index=1,
+                        key=f"ciclo_escolha_{row['id']}"
+                    )
+                    
+                    if ciclo_escolha == "Outro (Personalizado)":
+                        ciclo_card = st.number_input("Digite os dias:", min_value=1, max_value=365, value=10, step=1, key=f"ciclo_custom_{row['id']}")
+                    else:
+                        ciclo_card = int(ciclo_escolha)
 
                     if st.button("➕ Adicionar/Atualizar no CRM", key=f"btn_crm_card_{row['id']}"):
-                        ciclo_card = int(ciclo_dig) if ciclo_dig > 0 else int(ciclo_op)
-
                         conn_c = sqlite3.connect("agenda_unhas_v2.db")
                         c_cursor = conn_c.cursor()
                         c_cursor.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (row['nome_cliente'], usuario_atual))
@@ -795,16 +784,25 @@ with aba_crm:
                     
                     st.markdown("---")
                     st.write("✏️ **Editar Ciclo de Retorno:**")
-                    c_ed1, c_ed2 = st.columns(2)
-                    with c_ed1:
-                        padroes = [15, 21, 25, 30]
-                        idx_padrao = padroes.index(row['ciclo_dias']) if row['ciclo_dias'] in padroes else 1
-                        novo_ciclo_op = st.selectbox("Opção fixa", padroes, index=idx_padrao, key=f"ed_op_{row['id']}")
-                    with c_ed2:
-                        novo_ciclo_dig = st.number_input("Ou digite dias", min_value=0, max_value=365, value=0, step=1, key=f"ed_dig_{row['id']}")
+                    
+                    padroes_crm = [15, 21, 25, 30, "Outro (Personalizado)"]
+                    idx_inicial = padroes_crm.index(row['ciclo_dias']) if row['ciclo_dias'] in padroes_crm else 4
+                    
+                    ed_ciclo_escolha = st.selectbox(
+                        "Opção de Ciclo",
+                        padroes_crm,
+                        index=idx_inicial if isinstance(row['ciclo_dias'], int) and row['ciclo_dias'] in [15, 21, 25, 30] else 4,
+                        key=f"ed_ciclo_escolha_{row['id']}"
+                    )
+                    
+                    if ed_ciclo_escolha == "Outro (Personalizado)":
+                        val_atual_custom = row['ciclo_dias'] if not isinstance(row['ciclo_dias'], str) else 10
+                        ed_ciclo_custom = st.number_input("Digite os dias exatos", min_value=1, max_value=365, value=int(val_atual_custom), step=1, key=f"ed_ciclo_custom_{row['id']}")
+                        novo_ciclo_final = int(ed_ciclo_custom)
+                    else:
+                        novo_ciclo_final = int(ed_ciclo_escolha)
 
                     if st.button("💾 Salvar Novo Ciclo", key=f"btn_salvar_ciclo_{row['id']}"):
-                        novo_ciclo_final = int(novo_ciclo_dig) if novo_ciclo_dig > 0 else int(novo_ciclo_op)
                         conn_e = sqlite3.connect("agenda_unhas_v2.db")
                         c_e = conn_e.cursor()
                         c_e.execute("UPDATE clientes_retencao SET ciclo_dias = ? WHERE id = ?", (novo_ciclo_final, row['id']))
