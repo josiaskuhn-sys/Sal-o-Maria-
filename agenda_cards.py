@@ -9,7 +9,7 @@ def init_db():
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
 
-    # Tabela 1: Agendamentos por Horário (com valor, pagamento e duração)
+    # Tabela 1: Agendamentos por Horário
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS agendamentos (
@@ -28,16 +28,18 @@ def init_db():
     """
     )
 
-    # Migrações seguras para colunas novas em bases existentes
-    for coluna, tipo in [
-        ("valor", "REAL DEFAULT 0.0"),
-        ("forma_pagamento", "TEXT DEFAULT 'Pix'"),
-        ("duracao_minutos", "INTEGER DEFAULT 60")
-    ]:
-        try:
-            c.execute(f"ALTER TABLE agendamentos ADD COLUMN {coluna} {tipo}")
-        except sqlite3.OperationalError:
-            pass
+    # Verificação inteligente e segura de colunas para bancos já existentes
+    c.execute("PRAGMA table_info(agendamentos)")
+    colunas_atuais = [col[1] for col in c.fetchall()]
+
+    if "valor" not in colunas_atuais:
+        c.execute("ALTER TABLE agendamentos ADD COLUMN valor REAL DEFAULT 0.0")
+    if "forma_pagamento" not in colunas_atuais:
+        c.execute("ALTER TABLE agendamentos ADD COLUMN forma_pagamento TEXT DEFAULT 'Pix'")
+    if "duracao_minutos" not in colunas_atuais:
+        c.execute("ALTER TABLE agendamentos ADD COLUMN duracao_minutos INTEGER DEFAULT 60")
+    if "profissional" not in colunas_atuais:
+        c.execute("ALTER TABLE agendamentos ADD COLUMN profissional TEXT DEFAULT 'Maria'")
 
     # Tabela 2: Clientes e Ciclos (CRM)
     c.execute(
@@ -53,10 +55,10 @@ def init_db():
     """
     )
 
-    try:
+    c.execute("PRAGMA table_info(clientes_retencao)")
+    colunas_crm = [col[1] for col in c.fetchall()]
+    if "profissional" not in colunas_crm:
         c.execute("ALTER TABLE clientes_retencao ADD COLUMN profissional TEXT DEFAULT 'Maria'")
-    except sqlite3.OperationalError:
-        pass
 
     # Tabela 3: Minhas Tarefas / Anotações
     c.execute(
@@ -106,10 +108,10 @@ def init_db():
     """
     )
 
-    try:
+    c.execute("PRAGMA table_info(perfis)")
+    colunas_perfis = [col[1] for col in c.fetchall()]
+    if "whatsapp" not in colunas_perfis:
         c.execute("ALTER TABLE perfis ADD COLUMN whatsapp TEXT DEFAULT ''")
-    except sqlite3.OperationalError:
-        pass
 
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('titulo_studio', 'Studio Maria Rossatto')")
     c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('subtitulo_studio', 'Sistema de Gestão & Retenção')")
