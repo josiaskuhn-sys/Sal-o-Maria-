@@ -569,7 +569,7 @@ with aba_agenda:
             st.session_state.cal_view_mode = "listMonth"
             st.rerun()
 
-    # Configuração do Calendário (Com headerToolbar desativado para usar nosso controle perfeito)
+    # Configuração do Calendário
     opcoes_calendario = {
         "headerToolbar": False,
         "initialView": st.session_state.cal_view_mode,
@@ -578,7 +578,12 @@ with aba_agenda:
         "locale": "pt-br",
     }
 
-    state = calendar(events=eventos_calendario, options=opcoes_calendario, key=f"cal_studio_{usuario_atual}")
+    # Chave dinâmica atualizada para forçar a troca correta da visão e do mês no componente
+    state = calendar(
+        events=eventos_calendario, 
+        options=opcoes_calendario, 
+        key=f"cal_studio_{usuario_atual}_{st.session_state.cal_view_mode}_{st.session_state.cal_data_base}"
+    )
 
     st.divider()
 
