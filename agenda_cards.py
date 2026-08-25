@@ -120,8 +120,12 @@ def init_db():
     servicos_maria_default = "Mão tradicional\nPé tradicional\nBlindagem\nEsmaltação em gel\nBanho de gel\nAlongamento\nManutenção\nPacote de mão"
     servicos_camily_default = "Design de Sobrancelha\nSobrancelha com Henna\nExtensão de Cílios Fio a Fio\nVolume Russo\nLash Lifting\nManutenção de Cílios"
 
-    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos, whatsapp) VALUES ('Maria', 'maria123', ?, '5554991341375')", (servicos_maria_default,))
-    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos, whatsapp) VALUES ('Camily', 'camily123', ?, '')", (servicos_camily_default,))
+    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos, whatsapp) VALUES ('Maria', 'maria123', ?, '5554992508467')", (servicos_maria_default,))
+    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos, whatsapp) VALUES ('Camily', 'camily123', ?, '5554992406892')", (servicos_camily_default,))
+
+    # Atualiza caso já existam no banco com números antigos
+    c.execute("UPDATE perfis SET whatsapp = '5554992508467' WHERE nome = 'Maria'")
+    c.execute("UPDATE perfis SET whatsapp = '5554992406892' WHERE nome = 'Camily'")
 
     limite_30_dias = str(date.today() - timedelta(days=30))
     c.execute("DELETE FROM lixeira WHERE data_exclusao < ?", (limite_30_dias,))
@@ -347,11 +351,14 @@ with st.sidebar:
             salvar = st.form_submit_button("Salvar Horário")
 
             if salvar:
+                tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else ""
                 if not nome_cliente:
                     st.error("Preencha o nome da cliente!")
                 else:
                     conn = sqlite3.connect("agenda_unhas_v2.db")
                     c = conn.cursor()
+                    
+                    # 1. Salvar o Agendamento
                     c.execute(
                         """INSERT INTO agendamentos (nome_cliente, telefone, servico, data_atendimento, horario, profissional, valor, forma_pagamento, duracao_minutos) 
                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
@@ -367,9 +374,21 @@ with st.sidebar:
                             duracao_servico,
                         ),
                     )
+
+                    # 2. Sincronizar automaticamente com o CRM (clientes_retencao)
+                    if tel_clean:
+                        c.execute("SELECT id FROM clientes_retencao WHERE telefone = ? AND profissional = ?", (tel_clean, usuario_atual))
+                        existente_crm = c.fetchone()
+                        data_iso = data_atendimento.strftime("%Y-%m-%d")
+                        if existente_crm:
+                            c.execute("UPDATE clientes_retencao SET ultimo_atendimento = ? WHERE id = ?", (data_iso, existente_crm[0]))
+                        else:
+                            c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional) VALUES (?, ?, ?, ?, ?)", 
+                                      (nome_cliente, tel_clean, 21, data_iso, usuario_atual))
+
                     conn.commit()
                     conn.close()
-                    st.success("Horário marcado com sucesso!")
+                    st.success("Horário marcado e cliente integrada ao CRM com sucesso!")
                     st.rerun()
 
     elif tipo_cadastro == "👤 Cadastrar Cliente (CRM)":
@@ -578,7 +597,6 @@ with aba_agenda:
         "locale": "pt-br",
     }
 
-    # Chave dinâmica atualizada para forçar a troca correta da visão e do mês no componente
     state = calendar(
         events=eventos_calendario, 
         options=opcoes_calendario, 
@@ -913,7 +931,7 @@ with aba_config:
         novo_tema = st.selectbox("Tema Visual:", ["Dourado Luxo", "Clean White (Tudo Branco)", "Nude / Rosé", "Dark Elegance", "Lavanda / Soft Purple"], index=0)
         
         _, servicos_atuais_db, wa_db = get_perfil_info(usuario_atual)
-        novo_wa = st.text_input("Meu WhatsApp (ex: 5554991341375):", value=wa_db)
+        novo_wa = st.text_input("Meu WhatsApp (ex: 5554992508467):", value=wa_db)
         novos_servicos = st.text_area("Meus Serviços (um por linha):", value=servicos_atuais_db, height=120)
         
         nova_senha = st.text_input("Nova Senha (opcional):", type="password")
