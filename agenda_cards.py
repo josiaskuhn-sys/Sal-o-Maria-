@@ -458,7 +458,9 @@ with st.sidebar:
 titulo_atual = get_config("titulo_studio")
 subtitulo_atual = get_config("subtitulo_studio")
 
-st.title(f"💅 {titulo_atual} — Painel da {usuario_atual}")
+# Emoji customizado no título de acordo com a profissional
+emoji_perfil = "💅" if usuario_atual == "Maria" else "👁️✨"
+st.title(f"{emoji_perfil} {titulo_atual} — Painel da {usuario_atual}")
 
 # --- CENTRAL DE ALERTAS COM NOMES ---
 conn = sqlite3.connect("agenda_unhas_v2.db")
@@ -623,7 +625,8 @@ with aba_agenda:
     st.markdown(f"### 📋 Horários de **{data_selecionada.strftime('%d/%m/%Y')}**")
 
     if not df.empty:
-        texto_resumo = f"💅 *Resumo de Atendimentos ({data_selecionada.strftime('%d/%m/%Y')} - {usuario_atual}):*\n\n"
+        emoji_msg = "💅" if usuario_atual == "Maria" else "👁️✨"
+        texto_resumo = f"{emoji_msg} *Resumo de Atendimentos ({data_selecionada.strftime('%d/%m/%Y')} - {usuario_atual}):*\n\n"
         for _, row in df.iterrows():
             texto_resumo += f"⏰ *{row['horario']}* — {row['nome_cliente']} ({row['servico']}) | R$ {row['valor']:.2f}\n"
 
