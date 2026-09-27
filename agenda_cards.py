@@ -164,24 +164,23 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE TEMAS DINÂMICOS & CORREÇÃO DE ABAS E INPUTS ---
+# --- APLICAÇÃO DE ESTILOS LIMPOS E NÍTICOS PARA TODOS OS TEMAS ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
     "Dourado Luxo": """
         <style>
             .stApp { background-color: #FDFBF7 !important; color: #1F1E1B !important; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #D6CEC2; }
+            .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #D6CEC2; color: #1F1E1B !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label { color: #1F1E1B !important; }
             div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; }
             .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
             
-            /* Forçar visibilidade perfeita das abas (tabs) */
             .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #1F1E1B !important; }
             .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #9A752A !important; }
 
-            /* Forçar fundo branco e letras escuras nos inputs */
             input, textarea { background-color: #FFFFFF !important; color: #1F1E1B !important; -webkit-text-fill-color: #1F1E1B !important; }
             div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
                 background-color: #FFFFFF !important;
@@ -190,15 +189,17 @@ estilos_css = {
             }
             label { color: #2C2A26 !important; font-weight: 600 !important; }
 
-            .fc { background-color: #FFFFFF; border-radius: 10px; padding: 10px; border: 1px solid #D6CEC2; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+            /* Calendário sempre claro e legível */
+            .fc { background-color: #FFFFFF !important; border-radius: 10px; padding: 10px; border: 1px solid #D6CEC2; box-shadow: 0 1px 3px rgba(0,0,0,0.04); color: #1F1E1B !important; }
             .fc-daygrid-day-number { font-size: 0.85rem !important; font-weight: 700 !important; color: #1F1E1B !important; padding: 6px !important; }
             .fc-col-header-cell-cushion { font-size: 0.8rem !important; font-weight: 700 !important; color: #5C544B !important; padding: 6px !important; }
-            .fc-scrollgrid { border-color: #E2DBD2 !important; }
+            .fc-scrollgrid { border-color: #E2DBD2 !important; background-color: #FFFFFF !important; }
             .fc-theme-standard td, .fc-theme-standard th { border-color: #E2DBD2 !important; }
             .fc-day-today { background-color: #F9F3EA !important; }
+            .fc-daygrid-day { background-color: #FFFFFF !important; }
 
             .fc-event {
-                background-color: #FFFFFF !important;
+                background-color: #FDFBF7 !important;
                 border: 1px solid #D6CEC2 !important;
                 border-left: 3px solid #C5A059 !important;
                 border-radius: 4px !important;
@@ -218,46 +219,52 @@ estilos_css = {
     "Clean White (Tudo Branco)": """
         <style>
             .stApp { background-color: #FFFFFF !important; color: #111111 !important; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #FAFAFA !important; border-right: 1px solid #E5E5E5; }
+            .stSidebar { background-color: #FAFAFA !important; border-right: 1px solid #E5E5E5; color: #111111 !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label { color: #111111 !important; }
             div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
             .stButton>button { background-color: #111827 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #111827 !important; font-weight: 700 !important; }
             .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #111111 !important; }
             input, textarea { background-color: #FFFFFF !important; color: #111111 !important; -webkit-text-fill-color: #111111 !important; }
-            .fc { background-color: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 8px; padding: 10px; }
+            .fc { background-color: #FFFFFF !important; border: 1px solid #D1D5DB; border-radius: 8px; padding: 10px; color: #111111 !important; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #111827 !important; }
             .fc-col-header-cell-cushion { font-weight: 700 !important; color: #374151 !important; }
+            .fc-daygrid-day { background-color: #FFFFFF !important; }
             .fc-event { background-color: #F9FAFB !important; border: 1px solid #D1D5DB !important; border-left: 3px solid #111827 !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { font-weight: 600 !important; color: #111827 !important; }
         </style>
     """,
     "Nude / Rosé": """
         <style>
-            .stApp { background-color: #FFF9F9; color: #3D2E2E; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #FFF0F2; }
+            .stApp { background-color: #FFF9F9 !important; color: #3D2E2E !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #FFF0F2 !important; color: #3D2E2E !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label { color: #3D2E2E !important; }
             .stButton>button { background-color: #D68D8D !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #B85C5C !important; font-weight: 700 !important; }
             .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #3D2E2E !important; }
             input, textarea { background-color: #FFFFFF !important; color: #3D2E2E !important; -webkit-text-fill-color: #3D2E2E !important; }
-            .fc { background-color: #FFFFFF; border: 1px solid #E5C4C4; border-radius: 8px; padding: 10px; }
+            .fc { background-color: #FFFFFF !important; border: 1px solid #E5C4C4; border-radius: 8px; padding: 10px; color: #3D2E2E !important; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #3D2E2E !important; }
             .fc-col-header-cell-cushion { font-weight: 700 !important; color: #5C4444 !important; }
+            .fc-daygrid-day { background-color: #FFFFFF !important; }
             .fc-event { background-color: #FFFFFF !important; border: 1px solid #E5C4C4 !important; border-left: 3px solid #D68D8D !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { font-weight: 600 !important; color: #3D2E2E !important; }
         </style>
     """,
     "Dark Elegance": """
         <style>
-            .stApp { background-color: #121212; color: #F3F4F6; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #1E1E1E; }
+            .stApp { background-color: #121212 !important; color: #F3F4F6 !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #1E1E1E !important; color: #F3F4F6 !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label { color: #F3F4F6 !important; }
             .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #BB86FC !important; font-weight: 700 !important; }
             .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #F3F4F6 !important; }
             input, textarea { background-color: #2D2D2D !important; color: #F3F4F6 !important; -webkit-text-fill-color: #F3F4F6 !important; }
-            .fc { background-color: #1E1E1E; border: 1px solid #374151; border-radius: 8px; padding: 10px; }
+            .fc { background-color: #1E1E1E !important; border: 1px solid #374151; border-radius: 8px; padding: 10px; color: #F3F4F6 !important; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #F3F4F6 !important; }
             .fc-col-header-cell-cushion { font-weight: 700 !important; color: #9CA3AF !important; }
+            .fc-daygrid-day { background-color: #1E1E1E !important; }
             .fc-event { background-color: #2D2D2D !important; border: 1px solid #4B5563 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 2px 4px !important; }
             .fc-event-title { font-weight: 600 !important; color: #F3F4F6 !important; }
         </style>
@@ -265,17 +272,16 @@ estilos_css = {
     "Lavanda / Soft Purple": """
         <style>
             .stApp { background-color: #F8F7FF !important; color: #2D263B !important; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #EDE9FE !important; border-right: 1px solid #DDD6FE; }
+            .stSidebar { background-color: #EDE9FE !important; border-right: 1px solid #DDD6FE; color: #2D263B !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label { color: #2D263B !important; }
             div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; }
             .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             div[data-testid="stMetricValue"] { color: #7C3AED !important; font-weight: 700 !important; }
             
-            /* Forçar visibilidade perfeita das abas (tabs) no tema Lavanda */
             .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #2D263B !important; }
             .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #7C3AED !important; }
 
-            /* Forçar fundo branco e letras escuras nos inputs */
             input, textarea { background-color: #FFFFFF !important; color: #2D263B !important; -webkit-text-fill-color: #2D263B !important; }
             div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
                 background-color: #FFFFFF !important;
@@ -284,15 +290,17 @@ estilos_css = {
             }
             label { color: #3A354A !important; font-weight: 600 !important; }
 
-            .fc { background-color: #FFFFFF; border-radius: 10px; padding: 10px; border: 1px solid #DDD6FE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+            /* Calendário Lavanda limpo e claro */
+            .fc { background-color: #FFFFFF !important; border-radius: 10px; padding: 10px; border: 1px solid #DDD6FE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); color: #2D263B !important; }
             .fc-daygrid-day-number { font-size: 0.85rem !important; font-weight: 700 !important; color: #2D263B !important; padding: 6px !important; }
             .fc-col-header-cell-cushion { font-size: 0.8rem !important; font-weight: 700 !important; color: #5B4E77 !important; padding: 6px !important; }
-            .fc-scrollgrid { border-color: #E2DBD2 !important; }
+            .fc-scrollgrid { border-color: #DDD6FE !important; background-color: #FFFFFF !important; }
             .fc-theme-standard td, .fc-theme-standard th { border-color: #DDD6FE !important; }
             .fc-day-today { background-color: #F3E8FF !important; }
+            .fc-daygrid-day { background-color: #FFFFFF !important; }
 
             .fc-event {
-                background-color: #FFFFFF !important;
+                background-color: #F8F7FF !important;
                 border: 1px solid #DDD6FE !important;
                 border-left: 3px solid #8B5CF6 !important;
                 border-radius: 4px !important;
