@@ -164,7 +164,7 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO NÍTIDO ---
+# --- APLICAÇÃO DE TEMAS DINÂMICOS & CORREÇÃO DE INPUTS ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
@@ -177,7 +177,9 @@ estilos_css = {
             .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
             
-            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div {
+            /* Forçar fundo branco e letras escuras nos campos de texto e inputs */
+            input, textarea { background-color: #FFFFFF !important; color: #1F1E1B !important; -webkit-text-fill-color: #1F1E1B !important; }
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
                 background-color: #FFFFFF !important;
                 border-color: #D6CEC2 !important;
                 color: #1F1E1B !important;
@@ -217,6 +219,7 @@ estilos_css = {
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
             .stButton>button { background-color: #111827 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #111827 !important; font-weight: 700 !important; }
+            input, textarea { background-color: #FFFFFF !important; color: #111111 !important; -webkit-text-fill-color: #111111 !important; }
             .fc { background-color: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 8px; padding: 10px; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #111827 !important; }
             .fc-col-header-cell-cushion { font-weight: 700 !important; color: #374151 !important; }
@@ -230,6 +233,7 @@ estilos_css = {
             .stSidebar { background-color: #FFF0F2; }
             .stButton>button { background-color: #D68D8D !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #B85C5C !important; font-weight: 700 !important; }
+            input, textarea { background-color: #FFFFFF !important; color: #3D2E2E !important; -webkit-text-fill-color: #3D2E2E !important; }
             .fc { background-color: #FFFFFF; border: 1px solid #E5C4C4; border-radius: 8px; padding: 10px; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #3D2E2E !important; }
             .fc-col-header-cell-cushion { font-weight: 700 !important; color: #5C4444 !important; }
@@ -243,6 +247,7 @@ estilos_css = {
             .stSidebar { background-color: #1E1E1E; }
             .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #BB86FC !important; font-weight: 700 !important; }
+            input, textarea { background-color: #2D2D2D !important; color: #F3F4F6 !important; -webkit-text-fill-color: #F3F4F6 !important; }
             .fc { background-color: #1E1E1E; border: 1px solid #374151; border-radius: 8px; padding: 10px; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #F3F4F6 !important; }
             .fc-col-header-cell-cushion { font-weight: 700 !important; color: #9CA3AF !important; }
@@ -259,7 +264,9 @@ estilos_css = {
             .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             div[data-testid="stMetricValue"] { color: #7C3AED !important; font-weight: 700 !important; }
             
-            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div {
+            /* Forçar fundo branco e letras escuras nos campos de texto e inputs para Lavanda */
+            input, textarea { background-color: #FFFFFF !important; color: #2D263B !important; -webkit-text-fill-color: #2D263B !important; }
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
                 background-color: #FFFFFF !important;
                 border-color: #DDD6FE !important;
                 color: #2D263B !important;
