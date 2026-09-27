@@ -164,88 +164,142 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- ESTILOS CSS UNIFICADOS (FUNDO CLARO E CALENDÁRIO BRANCO/LEGÍVEL) ---
-estilos_css = """
-<style>
-    /* Fundo geral claro e limpo */
-    .stApp { background-color: #FDFBF7 !important; color: #1F1E1B !important; -webkit-font-smoothing: antialiased; }
-    
-    /* Barra lateral clara com letras bem visíveis */
-    .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #D6CEC2; color: #1F1E1B !important; }
-    .stSidebar p, .stSidebar span, .stSidebar label, .stSidebar div { color: #1F1E1B !important; }
-    
-    /* Contentores e Formulários */
-    div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; }
-    
-    /* Botões principais */
-    .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-    div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
-    
-    /* Abas superiores legíveis */
-    .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #1F1E1B !important; }
-    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #C5A059 !important; }
+# --- APLICAÇÃO DINÂMICA DE TEMAS COM CALENDÁRIO CLARO E INPUTS LEGÍVEIS ---
+tema_atual = get_config("tema_estilo")
 
-    /* CORREÇÃO TOTAL DOS INPUTS, DATAS, HORAS E TEXTOS (Fundo Branco, Letras Pretas) */
-    input, textarea, select, 
-    input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
-        background-color: #FFFFFF !important;
-        color: #1F1E1B !important;
-        -webkit-text-fill-color: #1F1E1B !important;
-        border: 1px solid #D6CEC2 !important;
-        border-radius: 6px !important;
-    }
-    
-    div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
-        background-color: #FFFFFF !important;
-        border-color: #D6CEC2 !important;
-        color: #1F1E1B !important;
-    }
-    
-    label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label {
-        color: #2C2A26 !important;
-        font-weight: 600 !important;
-    }
+estilos_css = {
+    "Dourado Luxo": """
+        <style>
+            .stApp { background-color: #FDFBF7 !important; color: #1F1E1B !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #D6CEC2; color: #1F1E1B !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label, .stSidebar div { color: #1F1E1B !important; }
+            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; }
+            .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+            div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
+            
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #1F1E1B !important; }
+            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #C5A059 !important; }
 
-    /* CALENDÁRIO 100% CLARO, BRANCO E COM LETRAS ESCURAS */
-    .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid {
-        background-color: #FFFFFF !important;
-        color: #1F1E1B !important;
-        border-color: #E2DBD2 !important;
-    }
-    .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell {
-        background-color: #FFFFFF !important;
-        color: #1F1E1B !important;
-    }
-    .fc-daygrid-day-number {
-        color: #1F1E1B !important;
-        font-weight: 700 !important;
-        font-size: 0.9rem !important;
-    }
-    .fc-col-header-cell-cushion {
-        color: #5C544B !important;
-        font-weight: 700 !important;
-    }
-    .fc-day-today {
-        background-color: #F9F3EA !important;
-    }
-    .fc-event {
-        background-color: #FDFBF7 !important;
-        border: 1px solid #D6CEC2 !important;
-        border-left: 3px solid #C5A059 !important;
-        border-radius: 4px !important;
-        padding: 3px 6px !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-    }
-    .fc-event-title {
-        color: #1F1E1B !important;
-        font-weight: 700 !important;
-        font-size: 0.75rem !important;
-    }
-</style>
-"""
+            input, textarea, select, input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
+                background-color: #FFFFFF !important; color: #1F1E1B !important; -webkit-text-fill-color: #1F1E1B !important; border: 1px solid #D6CEC2 !important; border-radius: 6px !important;
+            }
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] { background-color: #FFFFFF !important; border-color: #D6CEC2 !important; color: #1F1E1B !important; }
+            label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label { color: #2C2A26 !important; font-weight: 600 !important; }
 
-st.markdown(estilos_css, unsafe_allow_html=True)
+            .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid { background-color: #FFFFFF !important; color: #1F1E1B !important; border-color: #E2DBD2 !important; }
+            .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell { background-color: #FFFFFF !important; color: #1F1E1B !important; }
+            .fc-daygrid-day-number { color: #1F1E1B !important; font-weight: 700 !important; font-size: 0.9rem !important; }
+            .fc-col-header-cell-cushion { color: #5C544B !important; font-weight: 700 !important; }
+            .fc-day-today { background-color: #F9F3EA !important; }
+            .fc-event { background-color: #FDFBF7 !important; border: 1px solid #D6CEC2 !important; border-left: 3px solid #C5A059 !important; border-radius: 4px !important; padding: 3px 6px !important; }
+            .fc-event-title { color: #1F1E1B !important; font-weight: 700 !important; font-size: 0.75rem !important; }
+        </style>
+    """,
+    "Clean White (Tudo Branco)": """
+        <style>
+            .stApp { background-color: #FFFFFF !important; color: #111111 !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #FAFAFA !important; border-right: 1px solid #E5E5E5; color: #111111 !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label, .stSidebar div { color: #111111 !important; }
+            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
+            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
+            .stButton>button { background-color: #111827 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
+            div[data-testid="stMetricValue"] { color: #111827 !important; font-weight: 700 !important; }
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #111111 !important; }
+            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #111827 !important; }
+            input, textarea, select, input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
+                background-color: #FFFFFF !important; color: #111111 !important; -webkit-text-fill-color: #111111 !important; border: 1px solid #D1D5DB !important; border-radius: 6px !important;
+            }
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] { background-color: #FFFFFF !important; border-color: #D1D5DB !important; color: #111111 !important; }
+            label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label { color: #111111 !important; font-weight: 600 !important; }
+            .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid { background-color: #FFFFFF !important; color: #111111 !important; border-color: #D1D5DB !important; }
+            .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell { background-color: #FFFFFF !important; color: #111111 !important; }
+            .fc-daygrid-day-number { color: #111827 !important; font-weight: 700 !important; font-size: 0.9rem !important; }
+            .fc-col-header-cell-cushion { color: #374151 !important; font-weight: 700 !important; }
+            .fc-day-today { background-color: #F3F4F6 !important; }
+            .fc-event { background-color: #F9FAFB !important; border: 1px solid #D1D5DB !important; border-left: 3px solid #111827 !important; border-radius: 4px !important; padding: 3px 6px !important; }
+            .fc-event-title { color: #111827 !important; font-weight: 700 !important; font-size: 0.75rem !important; }
+        </style>
+    """,
+    "Nude / Rosé": """
+        <style>
+            .stApp { background-color: #FFF9F9 !important; color: #3D2E2E !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #FFF0F2 !important; color: #3D2E2E !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label, .stSidebar div { color: #3D2E2E !important; }
+            .stButton>button { background-color: #D68D8D !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
+            div[data-testid="stMetricValue"] { color: #B85C5C !important; font-weight: 700 !important; }
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #3D2E2E !important; }
+            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #B85C5C !important; }
+            input, textarea, select, input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
+                background-color: #FFFFFF !important; color: #3D2E2E !important; -webkit-text-fill-color: #3D2E2E !important; border: 1px solid #E5C4C4 !important; border-radius: 6px !important;
+            }
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] { background-color: #FFFFFF !important; border-color: #E5C4C4 !important; color: #3D2E2E !important; }
+            label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label { color: #3D2E2E !important; font-weight: 600 !important; }
+            .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid { background-color: #FFFFFF !important; color: #3D2E2E !important; border-color: #E5C4C4 !important; }
+            .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell { background-color: #FFFFFF !important; color: #3D2E2E !important; }
+            .fc-daygrid-day-number { color: #3D2E2E !important; font-weight: 700 !important; font-size: 0.9rem !important; }
+            .fc-col-header-cell-cushion { color: #5C4444 !important; font-weight: 700 !important; }
+            .fc-day-today { background-color: #FDF0F0 !important; }
+            .fc-event { background-color: #FFFFFF !important; border: 1px solid #E5C4C4 !important; border-left: 3px solid #D68D8D !important; border-radius: 4px !important; padding: 3px 6px !important; }
+            .fc-event-title { color: #3D2E2E !important; font-weight: 700 !important; font-size: 0.75rem !important; }
+        </style>
+    """,
+    "Dark Elegance": """
+        <style>
+            .stApp { background-color: #1E1E1E !important; color: #F3F4F6 !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #2D2D2D !important; border-right: 1px solid #3D3D3D; color: #F3F4F6 !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label, .stSidebar div { color: #F3F4F6 !important; }
+            div[data-testid="stForm"] { background-color: #2D2D2D !important; border: 1px solid #3D3D3D !important; border-radius: 10px; }
+            div[data-testid="stExpander"] { background-color: #2D2D2D !important; border: 1px solid #3D3D3D !important; border-radius: 10px; }
+            .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; width: 100%; }
+            div[data-testid="stMetricValue"] { color: #BB86FC !important; font-weight: 700 !important; }
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #F3F4F6 !important; }
+            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #BB86FC !important; }
+            input, textarea, select, input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
+                background-color: #FFFFFF !important; color: #1F1E1B !important; -webkit-text-fill-color: #1F1E1B !important; border: 1px solid #4B5563 !important; border-radius: 6px !important;
+            }
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] { background-color: #FFFFFF !important; border-color: #4B5563 !important; color: #1F1E1B !important; }
+            label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label { color: #F3F4F6 !important; font-weight: 600 !important; }
+            .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid { background-color: #FFFFFF !important; color: #1F1E1B !important; border-color: #4B5563 !important; }
+            .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell { background-color: #FFFFFF !important; color: #1F1E1B !important; }
+            .fc-daygrid-day-number { color: #1F1E1B !important; font-weight: 700 !important; font-size: 0.9rem !important; }
+            .fc-col-header-cell-cushion { color: #374151 !important; font-weight: 700 !important; }
+            .fc-day-today { background-color: #F3E8FF !important; }
+            .fc-event { background-color: #F9FAFB !important; border: 1px solid #4B5563 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 3px 6px !important; }
+            .fc-event-title { color: #1F1E1B !important; font-weight: 700 !important; font-size: 0.75rem !important; }
+        </style>
+    """,
+    "Lavanda / Soft Purple": """
+        <style>
+            .stApp { background-color: #F8F7FF !important; color: #2D263B !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #EDE9FE !important; border-right: 1px solid #DDD6FE; color: #2D263B !important; }
+            .stSidebar p, .stSidebar span, .stSidebar label, .stSidebar div { color: #2D263B !important; }
+            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; }
+            .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+            div[data-testid="stMetricValue"] { color: #7C3AED !important; font-weight: 700 !important; }
+            
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #2D263B !important; }
+            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #7C3AED !important; }
+
+            input, textarea, select, input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
+                background-color: #FFFFFF !important; color: #2D263B !important; -webkit-text-fill-color: #2D263B !important; border: 1px solid #DDD6FE !important; border-radius: 6px !important;
+            }
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] { background-color: #FFFFFF !important; border-color: #DDD6FE !important; color: #2D263B !important; }
+            label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label { color: #3A354A !important; font-weight: 600 !important; }
+
+            .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid { background-color: #FFFFFF !important; color: #2D263B !important; border-color: #DDD6FE !important; }
+            .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell { background-color: #FFFFFF !important; color: #2D263B !important; }
+            .fc-daygrid-day-number { color: #2D263B !important; font-weight: 700 !important; font-size: 0.9rem !important; }
+            .fc-col-header-cell-cushion { color: #5B4E77 !important; font-weight: 700 !important; }
+            .fc-day-today { background-color: #F3E8FF !important; }
+            .fc-event { background-color: #F8F7FF !important; border: 1px solid #DDD6FE !important; border-left: 3px solid #8B5CF6 !important; border-radius: 4px !important; padding: 3px 6px !important; }
+            .fc-event-title { color: #2D263B !important; font-weight: 700 !important; font-size: 0.75rem !important; }
+        </style>
+    """
+}
+
+st.markdown(estilos_css.get(tema_atual, estilos_css["Dourado Luxo"]), unsafe_allow_html=True)
 
 # --- BLOQUEIO ANTI-TRADUÇÃO ---
 st.markdown('<meta name="google" content="notranslate">', unsafe_allow_html=True)
@@ -1060,7 +1114,11 @@ with aba_config:
     st.subheader("⚙️ Configurações & Perfil")
     with st.form("form_config"):
         novo_titulo = st.text_input("Nome do Studio:", value=titulo_atual)
-        novo_tema = st.selectbox("Tema Visual:", ["Dourado Luxo", "Clean White (Tudo Branco)", "Nude / Rosé", "Dark Elegance", "Lavanda / Soft Purple"], index=0)
+        
+        # Manter o tema atual selecionado no dropdown
+        temas_disponiveis = ["Dourado Luxo", "Clean White (Tudo Branco)", "Nude / Rosé", "Dark Elegance", "Lavanda / Soft Purple"]
+        idx_tema_atual = temas_disponiveis.index(tema_atual) if tema_atual in temas_disponiveis else 0
+        novo_tema = st.selectbox("Tema Visual:", temas_disponiveis, index=idx_tema_atual)
         
         _, servicos_atuais_db, wa_db = get_perfil_info(usuario_atual)
         novo_wa = st.text_input("O meu WhatsApp (ex: 5554992508467):", value=wa_db)
@@ -1083,13 +1141,5 @@ with aba_config:
                     c.execute("UPDATE perfis SET servicos = ?, whatsapp = ? WHERE nome = ?", (novos_servicos, novo_wa, usuario_atual))
                 conn.commit()
                 conn.close()
-                st.success("Guardado com sucesso!")
-                st.rerun()
-
-    st.divider()
-    st.subheader("🛡️ Cópia de Segurança do Sistema")
-    try:
-        with open("agenda_unhas_v2.db", "rb") as f:
-            st.download_button("📥 Descarregar Base de Dados (.db)", f, file_name=f"backup_studio_{date.today()}.db")
-    except:
-        st.error("Erro ao gerar cópia de segurança.")
+                st.success("Guardado com sucesso! A atualizar tema...")
+                st.re
