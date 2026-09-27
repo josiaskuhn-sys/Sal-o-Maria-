@@ -164,7 +164,7 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE TEMAS DINÂMICOS & CORREÇÃO DE INPUTS ---
+# --- APLICAÇÃO DE TEMAS DINÂMICOS & CORREÇÃO DE ABAS E INPUTS ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
@@ -177,7 +177,11 @@ estilos_css = {
             .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
             
-            /* Forçar fundo branco e letras escuras nos campos de texto e inputs */
+            /* Forçar visibilidade perfeita das abas (tabs) */
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #1F1E1B !important; }
+            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #9A752A !important; }
+
+            /* Forçar fundo branco e letras escuras nos inputs */
             input, textarea { background-color: #FFFFFF !important; color: #1F1E1B !important; -webkit-text-fill-color: #1F1E1B !important; }
             div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
                 background-color: #FFFFFF !important;
@@ -219,6 +223,7 @@ estilos_css = {
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
             .stButton>button { background-color: #111827 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #111827 !important; font-weight: 700 !important; }
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #111111 !important; }
             input, textarea { background-color: #FFFFFF !important; color: #111111 !important; -webkit-text-fill-color: #111111 !important; }
             .fc { background-color: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 8px; padding: 10px; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #111827 !important; }
@@ -233,6 +238,7 @@ estilos_css = {
             .stSidebar { background-color: #FFF0F2; }
             .stButton>button { background-color: #D68D8D !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #B85C5C !important; font-weight: 700 !important; }
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #3D2E2E !important; }
             input, textarea { background-color: #FFFFFF !important; color: #3D2E2E !important; -webkit-text-fill-color: #3D2E2E !important; }
             .fc { background-color: #FFFFFF; border: 1px solid #E5C4C4; border-radius: 8px; padding: 10px; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #3D2E2E !important; }
@@ -247,6 +253,7 @@ estilos_css = {
             .stSidebar { background-color: #1E1E1E; }
             .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; width: 100%; }
             div[data-testid="stMetricValue"] { color: #BB86FC !important; font-weight: 700 !important; }
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #F3F4F6 !important; }
             input, textarea { background-color: #2D2D2D !important; color: #F3F4F6 !important; -webkit-text-fill-color: #F3F4F6 !important; }
             .fc { background-color: #1E1E1E; border: 1px solid #374151; border-radius: 8px; padding: 10px; }
             .fc-daygrid-day-number { font-weight: 700 !important; color: #F3F4F6 !important; }
@@ -264,7 +271,11 @@ estilos_css = {
             .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             div[data-testid="stMetricValue"] { color: #7C3AED !important; font-weight: 700 !important; }
             
-            /* Forçar fundo branco e letras escuras nos campos de texto e inputs para Lavanda */
+            /* Forçar visibilidade perfeita das abas (tabs) no tema Lavanda */
+            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #2D263B !important; }
+            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #7C3AED !important; }
+
+            /* Forçar fundo branco e letras escuras nos inputs */
             input, textarea { background-color: #FFFFFF !important; color: #2D263B !important; -webkit-text-fill-color: #2D263B !important; }
             div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
                 background-color: #FFFFFF !important;
@@ -426,7 +437,7 @@ with st.sidebar:
                         c.execute("UPDATE clientes_retencao SET ultimo_atendimento = ?, telefone = ?, valor = ?, forma_pagamento = ? WHERE id = ?", (data_iso, tel_clean, valor_servico, forma_pagto, existente_crm[0]))
                     else:
                         c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional, valor, forma_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagto))
+                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagamento))
 
                     conn.commit()
                     conn.close()
