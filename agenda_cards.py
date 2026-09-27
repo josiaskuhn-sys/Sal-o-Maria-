@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 from streamlit_calendar import calendar
 
-# --- BANCO DE DADOS & LIXEIRA ---
+# --- BASE DE DADOS & LIXEIRA ---
 def init_db():
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
@@ -140,7 +140,7 @@ def init_db():
 
 init_db()
 
-# --- FUNÇÕES DE BUSCA NO BANCO ---
+# --- FUNÇÕES DE BUSCA NA BASE DE DADOS ---
 def get_config(chave):
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
@@ -164,96 +164,131 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO NOTION MOBILE ---
+# --- APLICAÇÃO DE TEMAS DINÂMICOS & ESTILO NÍTIDO ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
     "Dourado Luxo": """
         <style>
-            .stApp { background-color: #FDFBF7 !important; color: #33322E !important; }
-            .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #E3DDD5; }
-            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #E3DDD5 !important; border-radius: 10px; }
-            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #E3DDD5 !important; border-radius: 10px; }
-            .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; }
-            div[data-testid="stMetricValue"] { color: #A88234 !important; }
+            .stApp { background-color: #FDFBF7 !important; color: #1F1E1B !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #D6CEC2; }
+            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; }
+            .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+            div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
             
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div {
+                background-color: #FFFFFF !important;
+                border-color: #D6CEC2 !important;
+                color: #1F1E1B !important;
+            }
+            label { color: #2C2A26 !important; font-weight: 600 !important; }
+
+            .fc { background-color: #FFFFFF; border-radius: 10px; padding: 10px; border: 1px solid #D6CEC2; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+            .fc-daygrid-day-number { font-size: 0.85rem !important; font-weight: 700 !important; color: #1F1E1B !important; padding: 6px !important; }
+            .fc-col-header-cell-cushion { font-size: 0.8rem !important; font-weight: 700 !important; color: #5C544B !important; padding: 6px !important; }
+            .fc-scrollgrid { border-color: #E2DBD2 !important; }
+            .fc-theme-standard td, .fc-theme-standard th { border-color: #E2DBD2 !important; }
+            .fc-day-today { background-color: #F9F3EA !important; }
+
             .fc-event {
                 background-color: #FFFFFF !important;
-                border: 1px solid #E3DDD5 !important;
+                border: 1px solid #D6CEC2 !important;
                 border-left: 3px solid #C5A059 !important;
                 border-radius: 4px !important;
-                padding: 2px 4px !important;
+                padding: 3px 6px !important;
                 margin-bottom: 2px !important;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+                box-shadow: 0 1px 2px rgba(0,0,0,0.06);
             }
             .fc-event-title {
                 white-space: normal !important;
                 word-break: break-word !important;
-                font-size: 0.68rem !important;
-                font-weight: 600 !important;
-                color: #33322E !important;
-            }
-            .fc-daygrid-event {
-                white-space: normal !important;
-                align-items: normal !important;
-            }
-            
-            @media (max-width: 768px) {
-                .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; padding-top: 0.5rem !important; }
-                h1 { font-size: 1.15rem !important; }
-                h2 { font-size: 0.95rem !important; }
-                h3 { font-size: 0.88rem !important; }
-                .fc-event { padding: 1px 2px !important; margin-bottom: 1px !important; }
-                .fc-event-title { font-size: 0.55rem !important; line-height: 1.05 !important; }
-                .fc-daygrid-day-number { font-size: 0.65rem !important; padding: 1px !important; }
-                .fc-col-header-cell-cushion { font-size: 0.65rem !important; padding: 2px !important; }
+                font-size: 0.72rem !important;
+                font-weight: 700 !important;
+                color: #1F1E1B !important;
             }
         </style>
     """,
     "Clean White (Tudo Branco)": """
         <style>
-            .stApp { background-color: #FFFFFF !important; color: #222222 !important; }
-            .stSidebar { background-color: #FAFAFA !important; border-right: 1px solid #EAEAEA; }
-            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #E0E0E0 !important; }
-            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #E0E0E0 !important; }
-            .stButton>button { background-color: #000000 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
-            div[data-testid="stMetricValue"] { color: #000000 !important; }
-            .fc-event { background-color: #F9FAFB !important; border: 1px solid #E5E7EB !important; border-left: 3px solid #000000 !important; border-radius: 4px !important; padding: 2px 4px !important; }
-            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #111827 !important; }
-            @media (max-width: 768px) { .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; } }
+            .stApp { background-color: #FFFFFF !important; color: #111111 !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #FAFAFA !important; border-right: 1px solid #E5E5E5; }
+            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
+            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
+            .stButton>button { background-color: #111827 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
+            div[data-testid="stMetricValue"] { color: #111827 !important; font-weight: 700 !important; }
+            .fc { background-color: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 8px; padding: 10px; }
+            .fc-daygrid-day-number { font-weight: 700 !important; color: #111827 !important; }
+            .fc-col-header-cell-cushion { font-weight: 700 !important; color: #374151 !important; }
+            .fc-event { background-color: #F9FAFB !important; border: 1px solid #D1D5DB !important; border-left: 3px solid #111827 !important; border-radius: 4px !important; padding: 2px 4px !important; }
+            .fc-event-title { font-weight: 600 !important; color: #111827 !important; }
         </style>
     """,
     "Nude / Rosé": """
         <style>
-            .stApp { background-color: #FFF9F9; color: #4A3E3D; }
+            .stApp { background-color: #FFF9F9; color: #3D2E2E; -webkit-font-smoothing: antialiased; }
             .stSidebar { background-color: #FFF0F2; }
-            .stButton>button { background-color: #E8A5A5 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
-            div[data-testid="stMetricValue"] { color: #D87070 !important; }
-            .fc-event { background-color: #FFFFFF !important; border: 1px solid #F5D0D0 !important; border-left: 3px solid #E8A5A5 !important; border-radius: 4px !important; padding: 2px 4px !important; }
-            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #4A3E3D !important; }
-            @media (max-width: 768px) { .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; } }
+            .stButton>button { background-color: #D68D8D !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
+            div[data-testid="stMetricValue"] { color: #B85C5C !important; font-weight: 700 !important; }
+            .fc { background-color: #FFFFFF; border: 1px solid #E5C4C4; border-radius: 8px; padding: 10px; }
+            .fc-daygrid-day-number { font-weight: 700 !important; color: #3D2E2E !important; }
+            .fc-col-header-cell-cushion { font-weight: 700 !important; color: #5C4444 !important; }
+            .fc-event { background-color: #FFFFFF !important; border: 1px solid #E5C4C4 !important; border-left: 3px solid #D68D8D !important; border-radius: 4px !important; padding: 2px 4px !important; }
+            .fc-event-title { font-weight: 600 !important; color: #3D2E2E !important; }
         </style>
     """,
     "Dark Elegance": """
         <style>
-            .stApp { background-color: #121212; color: #E0E0E0; }
+            .stApp { background-color: #121212; color: #F3F4F6; -webkit-font-smoothing: antialiased; }
             .stSidebar { background-color: #1E1E1E; }
             .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; width: 100%; }
-            div[data-testid="stMetricValue"] { color: #BB86FC !important; }
-            .fc-event { background-color: #1E1E1E !important; border: 1px solid #333333 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 2px 4px !important; }
-            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #E0E0E0 !important; }
-            @media (max-width: 768px) { .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; } }
+            div[data-testid="stMetricValue"] { color: #BB86FC !important; font-weight: 700 !important; }
+            .fc { background-color: #1E1E1E; border: 1px solid #374151; border-radius: 8px; padding: 10px; }
+            .fc-daygrid-day-number { font-weight: 700 !important; color: #F3F4F6 !important; }
+            .fc-col-header-cell-cushion { font-weight: 700 !important; color: #9CA3AF !important; }
+            .fc-event { background-color: #2D2D2D !important; border: 1px solid #4B5563 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 2px 4px !important; }
+            .fc-event-title { font-weight: 600 !important; color: #F3F4F6 !important; }
         </style>
     """,
     "Lavanda / Soft Purple": """
         <style>
-            .stApp { background-color: #F8F7FF; color: #3A354A; }
-            .stSidebar { background-color: #EDE9FE; }
-            .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; width: 100%; }
-            div[data-testid="stMetricValue"] { color: #7C3AED !important; }
-            .fc-event { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-left: 3px solid #8B5CF6 !important; border-radius: 4px !important; padding: 2px 4px !important; }
-            .fc-event-title { white-space: normal !important; word-break: break-word !important; font-size: 0.68rem !important; font-weight: 600 !important; color: #3A354A !important; }
-            @media (max-width: 768px) { .block-container { padding-left: 0.3rem !important; padding-right: 0.3rem !important; } }
+            .stApp { background-color: #F8F7FF !important; color: #2D263B !important; -webkit-font-smoothing: antialiased; }
+            .stSidebar { background-color: #EDE9FE !important; border-right: 1px solid #DDD6FE; }
+            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; }
+            .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+            div[data-testid="stMetricValue"] { color: #7C3AED !important; font-weight: 700 !important; }
+            
+            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div {
+                background-color: #FFFFFF !important;
+                border-color: #DDD6FE !important;
+                color: #2D263B !important;
+            }
+            label { color: #3A354A !important; font-weight: 600 !important; }
+
+            .fc { background-color: #FFFFFF; border-radius: 10px; padding: 10px; border: 1px solid #DDD6FE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+            .fc-daygrid-day-number { font-size: 0.85rem !important; font-weight: 700 !important; color: #2D263B !important; padding: 6px !important; }
+            .fc-col-header-cell-cushion { font-size: 0.8rem !important; font-weight: 700 !important; color: #5B4E77 !important; padding: 6px !important; }
+            .fc-scrollgrid { border-color: #E2DBD2 !important; }
+            .fc-theme-standard td, .fc-theme-standard th { border-color: #DDD6FE !important; }
+            .fc-day-today { background-color: #F3E8FF !important; }
+
+            .fc-event {
+                background-color: #FFFFFF !important;
+                border: 1px solid #DDD6FE !important;
+                border-left: 3px solid #8B5CF6 !important;
+                border-radius: 4px !important;
+                padding: 3px 6px !important;
+                margin-bottom: 2px !important;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+            }
+            .fc-event-title {
+                white-space: normal !important;
+                word-break: break-word !important;
+                font-size: 0.72rem !important;
+                font-weight: 700 !important;
+                color: #2D263B !important;
+            }
         </style>
     """,
 }
@@ -263,7 +298,7 @@ st.markdown(estilos_css.get(tema_atual, estilos_css["Dourado Luxo"]), unsafe_all
 # --- BLOQUEIO ANTI-TRADUÇÃO ---
 st.markdown('<meta name="google" content="notranslate">', unsafe_allow_html=True)
 
-# --- CONTROLE DE SESSÃO / LOGIN ---
+# --- CONTROLO DE SESSÃO / LOGIN ---
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
     st.session_state.usuario = ""
@@ -281,11 +316,11 @@ if not st.session_state.autenticado:
                 st.title("💅 Studio")
 
             st.subheader("🔒 Acesso Restrito")
-            st.write("Selecione sua conta e digite sua senha:")
+            st.write("Selecione a sua conta e introduza a palavra-passe:")
 
             with st.form("form_login"):
                 escolha_usuario = st.selectbox("Profissional:", ["Maria", "Camily"])
-                senha_input = st.text_input("Senha:", type="password")
+                senha_input = st.text_input("Palavra-passe:", type="password")
                 btn_entrar = st.form_submit_button("Entrar no Sistema")
 
                 if btn_entrar:
@@ -296,7 +331,7 @@ if not st.session_state.autenticado:
                         st.session_state.perfil = f"{'Unhas (Maria)' if escolha_usuario == 'Maria' else 'Sobrancelhas & Cílios (Camily)'}"
                         st.rerun()
                     else:
-                        st.error("Senha incorreta!")
+                        st.error("Palavra-passe incorreta!")
         st.stop()
 
 usuario_atual = st.session_state.usuario
@@ -311,9 +346,9 @@ with st.sidebar:
         st.image("logo.JPG", use_container_width=True)
     except:
         pass
-    st.success(f"Logada como:\n**{perfil_atual}**")
+    st.success(f"Com sessão iniciada como:\n**{perfil_atual}**")
     
-    if st.button("🚪 Sair (Trocar de Usuário)"):
+    if st.button("🚪 Sair (Mudar de Utilizador)"):
         st.session_state.autenticado = False
         st.session_state.usuario = ""
         st.session_state.perfil = ""
@@ -351,7 +386,7 @@ with st.sidebar:
             data_atendimento = st.date_input("Data*", value=date.today(), format="DD/MM/YYYY")
             horario = st.time_input("Horário*", value=datetime.strptime("14:00", "%H:%M").time())
 
-            salvar = st.form_submit_button("Salvar Horário")
+            salvar = st.form_submit_button("Guardar Horário")
 
             if salvar:
                 tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else "Não informado"
@@ -411,7 +446,7 @@ with st.sidebar:
 
             ultimo_atendimento = st.date_input("Último Atendimento*", value=date.today(), format="DD/MM/YYYY")
 
-            salvar_crm = st.form_submit_button("Salvar no CRM")
+            salvar_crm = st.form_submit_button("Guardar no CRM")
 
             if salvar_crm:
                 tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else "Não informado"
@@ -440,7 +475,7 @@ with st.sidebar:
             titulo_t = st.text_input("Título / Lembrete*")
             desc_t = st.text_area("Detalhes", placeholder="Ex: Comprar material")
             prio_t = st.selectbox("Prioridade", ["Baixa", "Média", "Alta"], index=1)
-            salvar_t = st.form_submit_button("Salvar Tarefa")
+            salvar_t = st.form_submit_button("Guardar Tarefa")
 
             if salvar_t:
                 if not titulo_t:
@@ -458,7 +493,6 @@ with st.sidebar:
 titulo_atual = get_config("titulo_studio")
 subtitulo_atual = get_config("subtitulo_studio")
 
-# Emoji customizado no título de acordo com a profissional
 emoji_perfil = "💅" if usuario_atual == "Maria" else "👁️✨"
 st.title(f"{emoji_perfil} {titulo_atual} — Painel da {usuario_atual}")
 
@@ -490,7 +524,7 @@ if hoje_dt.day >= ultimo_dia_mes.day - 3:
     df_mes_atual = pd.read_sql_query("SELECT valor FROM agendamentos WHERE profissional = ? AND data_atendimento LIKE ?", conn, params=(usuario_atual, f"{hoje_dt.strftime('%Y-%m')}%"))
     conn.close()
     faturamento_mes_atual = df_mes_atual["valor"].sum() if not df_mes_atual.empty else 0.0
-    aviso_fim_mes = f"🎉 **Fechamento de Mês:** O mês está acabando! Seu faturamento total até agora é de **R$ {faturamento_mes_atual:.2f}**. Parabéns!"
+    aviso_fim_mes = f"🎉 **Fechamento de Mês:** O mês está a acabar! O seu faturamento total até agora é de **R$ {faturamento_mes_atual:.2f}**. Parabéns!"
 
 if not df_agenda_hoje.empty or not df_crm_pendente.empty or aviso_fim_mes:
     with st.expander("🔔 Central de Notificações Internas", expanded=True):
@@ -546,8 +580,8 @@ with aba_agenda:
                 "start": row['data_atendimento'],
                 "allDay": True,
                 "backgroundColor": "#FFFFFF",
-                "borderColor": "#E3DDD5",
-                "textColor": "#33322E"
+                "borderColor": "#DDD6FE" if tema_atual == "Lavanda / Soft Purple" else "#D6CEC2",
+                "textColor": "#2D263B" if tema_atual == "Lavanda / Soft Purple" else "#1F1E1B"
             }
         )
 
@@ -954,7 +988,7 @@ with aba_fin:
                 data=html_documento,
                 file_name=f"relatorio_financeiro_{usuario_atual}_{filtro_periodo.lower().replace(' ', '_')}.html",
                 mime="text/html",
-                help="Baixa o documento estilizado. Ao abrir no PC ou celular, basta clicar em Imprimir / Salvar como PDF."
+                help="Baixa o documento estilizado. Ao abrir no PC ou telemóvel, basta clicar em Imprimir / Guardar como PDF."
             )
 
         st.markdown("### 💳 Faturamento por Forma de Pagamento")
@@ -1077,15 +1111,15 @@ with aba_config:
         novo_tema = st.selectbox("Tema Visual:", ["Dourado Luxo", "Clean White (Tudo Branco)", "Nude / Rosé", "Dark Elegance", "Lavanda / Soft Purple"], index=0)
         
         _, servicos_atuais_db, wa_db = get_perfil_info(usuario_atual)
-        novo_wa = st.text_input("Meu WhatsApp (ex: 5554992508467):", value=wa_db)
-        novos_servicos = st.text_area("Meus Serviços (um por linha):", value=servicos_atuais_db, height=120)
+        novo_wa = st.text_input("O meu WhatsApp (ex: 5554992508467):", value=wa_db)
+        novos_servicos = st.text_area("Os meus Serviços (um por linha):", value=servicos_atuais_db, height=120)
         
-        nova_senha = st.text_input("Nova Senha (opcional):", type="password")
-        repete_senha = st.text_input("Repetir Nova Senha:", type="password")
+        nova_senha = st.text_input("Nova Palavra-passe (opcional):", type="password")
+        repete_senha = st.text_input("Repetir Nova Palavra-passe:", type="password")
 
-        if st.form_submit_button("Salvar Alterações"):
+        if st.form_submit_button("Guardar Alterações"):
             if nova_senha != repete_senha:
-                st.error("As senhas não conferem! Por favor, digite a mesma senha nos dois campos.")
+                st.error("As palavras-passe não coincidem! Por favor, introduza a mesma palavra-passe em ambos os campos.")
             else:
                 conn = sqlite3.connect("agenda_unhas_v2.db")
                 c = conn.cursor()
@@ -1097,13 +1131,13 @@ with aba_config:
                     c.execute("UPDATE perfis SET servicos = ?, whatsapp = ? WHERE nome = ?", (novos_servicos, novo_wa, usuario_atual))
                 conn.commit()
                 conn.close()
-                st.success("Salvo com sucesso!")
+                st.success("Guardado com sucesso!")
                 st.rerun()
 
     st.divider()
-    st.subheader("🛡️ Backup do Sistema")
+    st.subheader("🛡️ Cópia de Segurança do Sistema")
     try:
         with open("agenda_unhas_v2.db", "rb") as f:
-            st.download_button("📥 Baixar Banco de Dados (.db)", f, file_name=f"backup_studio_{date.today()}.db")
+            st.download_button("📥 Descarregar Base de Dados (.db)", f, file_name=f"backup_studio_{date.today()}.db")
     except:
-        st.error("Erro ao gerar backup.")
+        st.error("Erro ao gerar cópia de segurança.")
