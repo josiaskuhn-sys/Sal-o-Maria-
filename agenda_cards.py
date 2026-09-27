@@ -164,162 +164,88 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DE ESTILOS LIMPOS E NÍTICOS PARA TODOS OS TEMAS ---
-tema_atual = get_config("tema_estilo")
+# --- ESTILOS CSS UNIFICADOS (FUNDO CLARO E CALENDÁRIO BRANCO/LEGÍVEL) ---
+estilos_css = """
+<style>
+    /* Fundo geral claro e limpo */
+    .stApp { background-color: #FDFBF7 !important; color: #1F1E1B !important; -webkit-font-smoothing: antialiased; }
+    
+    /* Barra lateral clara com letras bem visíveis */
+    .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #D6CEC2; color: #1F1E1B !important; }
+    .stSidebar p, .stSidebar span, .stSidebar label, .stSidebar div { color: #1F1E1B !important; }
+    
+    /* Contentores e Formulários */
+    div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; }
+    
+    /* Botões principais */
+    .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
+    
+    /* Abas superiores legíveis */
+    .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #1F1E1B !important; }
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #C5A059 !important; }
 
-estilos_css = {
-    "Dourado Luxo": """
-        <style>
-            .stApp { background-color: #FDFBF7 !important; color: #1F1E1B !important; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #F4EFEA !important; border-right: 1px solid #D6CEC2; color: #1F1E1B !important; }
-            .stSidebar p, .stSidebar span, .stSidebar label { color: #1F1E1B !important; }
-            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; }
-            .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-            div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
-            
-            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #1F1E1B !important; }
-            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #9A752A !important; }
+    /* CORREÇÃO TOTAL DOS INPUTS, DATAS, HORAS E TEXTOS (Fundo Branco, Letras Pretas) */
+    input, textarea, select, 
+    input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
+        background-color: #FFFFFF !important;
+        color: #1F1E1B !important;
+        -webkit-text-fill-color: #1F1E1B !important;
+        border: 1px solid #D6CEC2 !important;
+        border-radius: 6px !important;
+    }
+    
+    div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
+        background-color: #FFFFFF !important;
+        border-color: #D6CEC2 !important;
+        color: #1F1E1B !important;
+    }
+    
+    label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label {
+        color: #2C2A26 !important;
+        font-weight: 600 !important;
+    }
 
-            input, textarea { background-color: #FFFFFF !important; color: #1F1E1B !important; -webkit-text-fill-color: #1F1E1B !important; }
-            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
-                background-color: #FFFFFF !important;
-                border-color: #D6CEC2 !important;
-                color: #1F1E1B !important;
-            }
-            label { color: #2C2A26 !important; font-weight: 600 !important; }
+    /* CALENDÁRIO 100% CLARO, BRANCO E COM LETRAS ESCURAS */
+    .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid {
+        background-color: #FFFFFF !important;
+        color: #1F1E1B !important;
+        border-color: #E2DBD2 !important;
+    }
+    .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell {
+        background-color: #FFFFFF !important;
+        color: #1F1E1B !important;
+    }
+    .fc-daygrid-day-number {
+        color: #1F1E1B !important;
+        font-weight: 700 !important;
+        font-size: 0.9rem !important;
+    }
+    .fc-col-header-cell-cushion {
+        color: #5C544B !important;
+        font-weight: 700 !important;
+    }
+    .fc-day-today {
+        background-color: #F9F3EA !important;
+    }
+    .fc-event {
+        background-color: #FDFBF7 !important;
+        border: 1px solid #D6CEC2 !important;
+        border-left: 3px solid #C5A059 !important;
+        border-radius: 4px !important;
+        padding: 3px 6px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    .fc-event-title {
+        color: #1F1E1B !important;
+        font-weight: 700 !important;
+        font-size: 0.75rem !important;
+    }
+</style>
+"""
 
-            /* Calendário sempre claro e legível */
-            .fc { background-color: #FFFFFF !important; border-radius: 10px; padding: 10px; border: 1px solid #D6CEC2; box-shadow: 0 1px 3px rgba(0,0,0,0.04); color: #1F1E1B !important; }
-            .fc-daygrid-day-number { font-size: 0.85rem !important; font-weight: 700 !important; color: #1F1E1B !important; padding: 6px !important; }
-            .fc-col-header-cell-cushion { font-size: 0.8rem !important; font-weight: 700 !important; color: #5C544B !important; padding: 6px !important; }
-            .fc-scrollgrid { border-color: #E2DBD2 !important; background-color: #FFFFFF !important; }
-            .fc-theme-standard td, .fc-theme-standard th { border-color: #E2DBD2 !important; }
-            .fc-day-today { background-color: #F9F3EA !important; }
-            .fc-daygrid-day { background-color: #FFFFFF !important; }
-
-            .fc-event {
-                background-color: #FDFBF7 !important;
-                border: 1px solid #D6CEC2 !important;
-                border-left: 3px solid #C5A059 !important;
-                border-radius: 4px !important;
-                padding: 3px 6px !important;
-                margin-bottom: 2px !important;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-            }
-            .fc-event-title {
-                white-space: normal !important;
-                word-break: break-word !important;
-                font-size: 0.72rem !important;
-                font-weight: 700 !important;
-                color: #1F1E1B !important;
-            }
-        </style>
-    """,
-    "Clean White (Tudo Branco)": """
-        <style>
-            .stApp { background-color: #FFFFFF !important; color: #111111 !important; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #FAFAFA !important; border-right: 1px solid #E5E5E5; color: #111111 !important; }
-            .stSidebar p, .stSidebar span, .stSidebar label { color: #111111 !important; }
-            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
-            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D1D5DB !important; }
-            .stButton>button { background-color: #111827 !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
-            div[data-testid="stMetricValue"] { color: #111827 !important; font-weight: 700 !important; }
-            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #111111 !important; }
-            input, textarea { background-color: #FFFFFF !important; color: #111111 !important; -webkit-text-fill-color: #111111 !important; }
-            .fc { background-color: #FFFFFF !important; border: 1px solid #D1D5DB; border-radius: 8px; padding: 10px; color: #111111 !important; }
-            .fc-daygrid-day-number { font-weight: 700 !important; color: #111827 !important; }
-            .fc-col-header-cell-cushion { font-weight: 700 !important; color: #374151 !important; }
-            .fc-daygrid-day { background-color: #FFFFFF !important; }
-            .fc-event { background-color: #F9FAFB !important; border: 1px solid #D1D5DB !important; border-left: 3px solid #111827 !important; border-radius: 4px !important; padding: 2px 4px !important; }
-            .fc-event-title { font-weight: 600 !important; color: #111827 !important; }
-        </style>
-    """,
-    "Nude / Rosé": """
-        <style>
-            .stApp { background-color: #FFF9F9 !important; color: #3D2E2E !important; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #FFF0F2 !important; color: #3D2E2E !important; }
-            .stSidebar p, .stSidebar span, .stSidebar label { color: #3D2E2E !important; }
-            .stButton>button { background-color: #D68D8D !important; color: white !important; border-radius: 8px !important; border: none !important; width: 100%; }
-            div[data-testid="stMetricValue"] { color: #B85C5C !important; font-weight: 700 !important; }
-            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #3D2E2E !important; }
-            input, textarea { background-color: #FFFFFF !important; color: #3D2E2E !important; -webkit-text-fill-color: #3D2E2E !important; }
-            .fc { background-color: #FFFFFF !important; border: 1px solid #E5C4C4; border-radius: 8px; padding: 10px; color: #3D2E2E !important; }
-            .fc-daygrid-day-number { font-weight: 700 !important; color: #3D2E2E !important; }
-            .fc-col-header-cell-cushion { font-weight: 700 !important; color: #5C4444 !important; }
-            .fc-daygrid-day { background-color: #FFFFFF !important; }
-            .fc-event { background-color: #FFFFFF !important; border: 1px solid #E5C4C4 !important; border-left: 3px solid #D68D8D !important; border-radius: 4px !important; padding: 2px 4px !important; }
-            .fc-event-title { font-weight: 600 !important; color: #3D2E2E !important; }
-        </style>
-    """,
-    "Dark Elegance": """
-        <style>
-            .stApp { background-color: #121212 !important; color: #F3F4F6 !important; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #1E1E1E !important; color: #F3F4F6 !important; }
-            .stSidebar p, .stSidebar span, .stSidebar label { color: #F3F4F6 !important; }
-            .stButton>button { background-color: #BB86FC !important; color: #121212 !important; border-radius: 8px !important; font-weight: bold !important; width: 100%; }
-            div[data-testid="stMetricValue"] { color: #BB86FC !important; font-weight: 700 !important; }
-            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #F3F4F6 !important; }
-            input, textarea { background-color: #2D2D2D !important; color: #F3F4F6 !important; -webkit-text-fill-color: #F3F4F6 !important; }
-            .fc { background-color: #1E1E1E !important; border: 1px solid #374151; border-radius: 8px; padding: 10px; color: #F3F4F6 !important; }
-            .fc-daygrid-day-number { font-weight: 700 !important; color: #F3F4F6 !important; }
-            .fc-col-header-cell-cushion { font-weight: 700 !important; color: #9CA3AF !important; }
-            .fc-daygrid-day { background-color: #1E1E1E !important; }
-            .fc-event { background-color: #2D2D2D !important; border: 1px solid #4B5563 !important; border-left: 3px solid #BB86FC !important; border-radius: 4px !important; padding: 2px 4px !important; }
-            .fc-event-title { font-weight: 600 !important; color: #F3F4F6 !important; }
-        </style>
-    """,
-    "Lavanda / Soft Purple": """
-        <style>
-            .stApp { background-color: #F8F7FF !important; color: #2D263B !important; -webkit-font-smoothing: antialiased; }
-            .stSidebar { background-color: #EDE9FE !important; border-right: 1px solid #DDD6FE; color: #2D263B !important; }
-            .stSidebar p, .stSidebar span, .stSidebar label { color: #2D263B !important; }
-            div[data-testid="stForm"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-            div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; }
-            .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-            div[data-testid="stMetricValue"] { color: #7C3AED !important; font-weight: 700 !important; }
-            
-            .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #2D263B !important; }
-            .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #7C3AED !important; }
-
-            input, textarea { background-color: #FFFFFF !important; color: #2D263B !important; -webkit-text-fill-color: #2D263B !important; }
-            div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
-                background-color: #FFFFFF !important;
-                border-color: #DDD6FE !important;
-                color: #2D263B !important;
-            }
-            label { color: #3A354A !important; font-weight: 600 !important; }
-
-            /* Calendário Lavanda limpo e claro */
-            .fc { background-color: #FFFFFF !important; border-radius: 10px; padding: 10px; border: 1px solid #DDD6FE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); color: #2D263B !important; }
-            .fc-daygrid-day-number { font-size: 0.85rem !important; font-weight: 700 !important; color: #2D263B !important; padding: 6px !important; }
-            .fc-col-header-cell-cushion { font-size: 0.8rem !important; font-weight: 700 !important; color: #5B4E77 !important; padding: 6px !important; }
-            .fc-scrollgrid { border-color: #DDD6FE !important; background-color: #FFFFFF !important; }
-            .fc-theme-standard td, .fc-theme-standard th { border-color: #DDD6FE !important; }
-            .fc-day-today { background-color: #F3E8FF !important; }
-            .fc-daygrid-day { background-color: #FFFFFF !important; }
-
-            .fc-event {
-                background-color: #F8F7FF !important;
-                border: 1px solid #DDD6FE !important;
-                border-left: 3px solid #8B5CF6 !important;
-                border-radius: 4px !important;
-                padding: 3px 6px !important;
-                margin-bottom: 2px !important;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-            }
-            .fc-event-title {
-                white-space: normal !important;
-                word-break: break-word !important;
-                font-size: 0.72rem !important;
-                font-weight: 700 !important;
-                color: #2D263B !important;
-            }
-        </style>
-    """,
-}
-
-st.markdown(estilos_css.get(tema_atual, estilos_css["Dourado Luxo"]), unsafe_allow_html=True)
+st.markdown(estilos_css, unsafe_allow_html=True)
 
 # --- BLOQUEIO ANTI-TRADUÇÃO ---
 st.markdown('<meta name="google" content="notranslate">', unsafe_allow_html=True)
@@ -445,7 +371,7 @@ with st.sidebar:
                         c.execute("UPDATE clientes_retencao SET ultimo_atendimento = ?, telefone = ?, valor = ?, forma_pagamento = ? WHERE id = ?", (data_iso, tel_clean, valor_servico, forma_pagto, existente_crm[0]))
                     else:
                         c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional, valor, forma_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagamento))
+                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagto))
 
                     conn.commit()
                     conn.close()
@@ -606,8 +532,8 @@ with aba_agenda:
                 "start": row['data_atendimento'],
                 "allDay": True,
                 "backgroundColor": "#FFFFFF",
-                "borderColor": "#DDD6FE" if tema_atual == "Lavanda / Soft Purple" else "#D6CEC2",
-                "textColor": "#2D263B" if tema_atual == "Lavanda / Soft Purple" else "#1F1E1B"
+                "borderColor": "#D6CEC2",
+                "textColor": "#1F1E1B"
             }
         )
 
