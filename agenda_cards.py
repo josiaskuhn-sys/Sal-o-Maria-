@@ -384,9 +384,10 @@ with st.sidebar:
     if tipo_cadastro == "📅 Novo Agendamento (Horário)":
         st.header(f"➕ Agendar ({usuario_atual})")
 
+        # ORIGEM DA CLIENTE FORA DO FORMULÁRIO PARA ATUALIZAR INSTANTANEAMENTE
+        modo_cli = st.radio("Origem da Cliente:", ["Cliente Existente", "Novo Contato"], horizontal=True, key="modo_cli_agenda_radio")
+
         with st.form("form_rapido", clear_on_submit=True):
-            modo_cli = st.radio("Origem da Cliente:", ["Cliente Existente", "Novo Contato"], horizontal=True, key="modo_cli_agenda_radio")
-            
             if modo_cli == "Cliente Existente":
                 if lista_contatos_nomes:
                     nome_cliente = st.selectbox("Selecione a Cliente", lista_contatos_nomes, key="sel_cliente_existente_form")
