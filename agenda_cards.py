@@ -536,7 +536,7 @@ subtitulo_atual = get_config("subtitulo_studio")
 emoji_perfil = "💅" if usuario_atual == "Maria" else "👁️✨"
 st.title(f"{emoji_perfil} {titulo_atual} — Painel da {usuario_atual}")
 
-# --- CENTRAL DE ALERTAS (HOJE + SEMANA CRM) ---
+# --- CENTRAL DE ALERTAS (HOJE + RESTO DA SEMANA CRM) ---
 conn = sqlite3.connect("agenda_unhas_v2.db")
 hoje_str = date.today().isoformat()
 
@@ -551,12 +551,14 @@ conn.close()
 hoje_dt = date.today()
 inicio_semana = hoje_dt - timedelta(days=hoje_dt.weekday())
 fim_semana = inicio_semana + timedelta(days=6)
+amanha_dt = hoje_dt + timedelta(days=1)
 
 if not df_crm_tudo.empty:
     df_crm_tudo["ultimo_atendimento"] = pd.to_datetime(df_crm_tudo["ultimo_atendimento"], errors="coerce").dt.date
     df_crm_tudo["proximo_atendimento"] = df_crm_tudo.apply(lambda r: r["ultimo_atendimento"] + timedelta(days=int(r["ciclo_dias"])), axis=1)
     df_crm_tudo["dias_atraso"] = df_crm_tudo["proximo_atendimento"].apply(lambda d: (hoje_dt - d).days)
-    chamar_semana_topo = df_crm_tudo[df_crm_tudo["proximo_atendimento"] <= fim_semana].sort_values(by="proximo_atendimento")
+    # Mostra o CRM a partir de amanhã até o fim de semana (excluindo o dia de hoje, que já tem a aba própria)
+    chamar_semana_topo = df_crm_tudo[(df_crm_tudo["proximo_atendimento"] >= amanha_dt) & (df_crm_tudo["proximo_atendimento"] <= fim_semana)].sort_values(by="proximo_atendimento")
 else:
     chamar_semana_topo = pd.DataFrame()
 
@@ -583,16 +585,16 @@ if not df_agenda_hoje.empty or not chamar_semana_topo.empty or aviso_fim_mes:
                 st.info("📅 Sem agendamentos para hoje.")
         with col_al2:
             if not chamar_semana_topo.empty:
-                st.info(f"📲 **CRM para Chamar esta Semana ({len(chamar_semana_topo)}):**")
+                st.info(f"📲 **Próximos Dias da Semana ({len(chamar_semana_topo)}):**")
                 for _, row in chamar_semana_topo.iterrows():
                     dt_prox_fmt = row["proximo_atendimento"].strftime('%d/%m')
-                    atraso_dias = row["dias_atraso"]
-                    status_txt = f"Vencido há {atraso_dias}d" if atraso_dias > 0 else ("Vence hoje" if atraso_dias == 0 else f"Retorno: {dt_prox_fmt}")
-                    st.markdown(f"- 👤 **{row['nome']}** *({status_txt})*")
+                    dias_sem_pt = {0: "Seg", 1: "Ter", 2: "Qua", 3: "Qui", 4: "Sex", 5: "Sáb", 6: "Dom"}
+                    dia_nome = dias_sem_pt.get(row["proximo_atendimento"].weekday(), "")
+                    st.markdown(f"- 👤 **{row['nome']}** *(Retorno: {dia_nome}, {dt_prox_fmt})*")
             else:
-                st.success("✅ Nenhuma cliente para chamar esta semana.")
+                st.info("📅 Nenhuma cliente para chamar nos próximos dias desta semana.")
 else:
-    st.success("✅ Tudo em dia! Sem pendências para hoje ou esta semana.")
+    st.success("✅ Tudo em dia! Sem pendências para hoje ou próximos dias.")
 
 st.divider()
 
@@ -990,7 +992,7 @@ with aba_crm:
                         )
                     
                     st.markdown("---")
-                    st.write("✏️ **Editar Dados da Cliente e Ciclo:**")
+                    st.write("✏️️ **Editar Dados da Cliente e Ciclo:**")
                     
                     col_e1, col_e2 = st.columns(2)
                     with col_e1:
@@ -1272,7 +1274,7 @@ with aba_config:
 
     st.divider()
     st.subheader("📂 Restaurar Base de Dados (Backup)")
-    st.write("Se precisar de recuperar os seus dados de um backup anterior, carregue aqui o seu ficheiro `.db`:")
+    st.write("Se precisar de recuperar os seus dados de un backup anterior, carregue aqui o seu ficheiro `.db`:")
     uploaded_db = st.file_uploader("Escolher ficheiro de base de dados (.db)", type=["db"])
     if uploaded_db is not None:
         if st.button("Restaurar Dados"):
