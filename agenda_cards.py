@@ -385,34 +385,34 @@ with st.sidebar:
         st.header(f"➕ Agendar ({usuario_atual})")
 
         with st.form("form_rapido", clear_on_submit=True):
-            modo_cli = st.radio("Origem da Cliente:", ["Cliente Existente", "Novo Contato"], horizontal=True, key="modo_cli_agenda")
+            modo_cli = st.radio("Origem da Cliente:", ["Cliente Existente", "Novo Contato"], horizontal=True, key="modo_cli_agenda_radio")
             
             if modo_cli == "Cliente Existente":
                 if lista_contatos_nomes:
-                    nome_cliente = st.selectbox("Selecione a Cliente", lista_contatos_nomes)
+                    nome_cliente = st.selectbox("Selecione a Cliente", lista_contatos_nomes, key="sel_cliente_existente_form")
                     match_tel = df_contatos_db[df_contatos_db["nome"] == nome_cliente]["telefone"].values
                     tel_sugestao = match_tel[0] if len(match_tel) > 0 and match_tel[0] else ""
                 else:
                     st.warning("Nenhum contato salvo. Selecione 'Novo Contato'.")
                     nome_cliente = ""
                     tel_sugestao = ""
-                telefone = st.text_input("WhatsApp", value=tel_sugestao, placeholder="54991341375")
+                telefone = st.text_input("WhatsApp", value=tel_sugestao, placeholder="54991341375", key="tel_existente_form")
             else:
-                nome_cliente = st.text_input("Nome da Nova Cliente*")
-                telefone = st.text_input("WhatsApp do Novo Contato", placeholder="54991341375")
+                nome_cliente = st.text_input("Nome da Nova Cliente*", key="input_novo_nome_form")
+                telefone = st.text_input("WhatsApp do Novo Contato", placeholder="54991341375", key="tel_novo_form")
 
-            servico = st.selectbox("Serviço*", servicos_disponiveis)
+            servico = st.selectbox("Serviço*", servicos_disponiveis, key="servico_agendamento_form")
             
             col_v1, col_v2 = st.columns(2)
             with col_v1:
-                valor_servico = st.number_input("Valor (R$)*", min_value=0.0, value=50.0, step=5.0)
+                valor_servico = st.number_input("Valor (R$)*", min_value=0.0, value=50.0, step=5.0, key="valor_agendamento_form")
             with col_v2:
-                duracao_servico = st.selectbox("Duração*", [30, 45, 60, 90, 120, 150, 180], index=2, format_func=lambda x: f"{x} min")
+                duracao_servico = st.selectbox("Duração*", [30, 45, 60, 90, 120, 150, 180], index=2, format_func=lambda x: f"{x} min", key="duracao_agendamento_form")
 
-            forma_pagto = st.selectbox("Forma de Pagamento*", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"])
+            forma_pagto = st.selectbox("Forma de Pagamento*", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], key="pagto_agendamento_form")
             
-            data_atendimento = st.date_input("Data*", value=date.today(), format="DD/MM/YYYY")
-            horario = st.time_input("Horário*", value=datetime.strptime("14:00", "%H:%M").time())
+            data_atendimento = st.date_input("Data*", value=date.today(), format="DD/MM/YYYY", key="data_agendamento_form")
+            horario = st.time_input("Horário*", value=datetime.strptime("14:00", "%H:%M").time(), key="horario_agendamento_form")
 
             salvar = st.form_submit_button("Guardar Horário")
 
@@ -464,8 +464,8 @@ with st.sidebar:
     elif tipo_cadastro == "👤 Cadastrar Cliente (CRM)":
         st.header(f"➕ CRM ({usuario_atual})")
         with st.form("form_cliente_crm", clear_on_submit=True):
-            nome = st.text_input("Nome da Cliente*")
-            telefone = st.text_input("WhatsApp*", placeholder="54991341375")
+            nome = st.text_input("Nome da Cliente*", key="crm_nome_input")
+            telefone = st.text_input("WhatsApp*", placeholder="54991341375", key="crm_tel_input")
             
             ciclo_opcao_crm = st.selectbox("Ciclo de Retorno (Dias)*", [15, 21, 25, 30, "Outro (Personalizado)"], index=1, key="sidebar_crm_ciclo_op")
             if ciclo_opcao_crm == "Outro (Personalizado)":
@@ -475,11 +475,11 @@ with st.sidebar:
 
             col_vc1, col_vc2 = st.columns(2)
             with col_vc1:
-                val_crm_cad = st.number_input("Valor Padrão (R$)*", min_value=0.0, value=50.0, step=5.0)
+                val_crm_cad = st.number_input("Valor Padrão (R$)*", min_value=0.0, value=50.0, step=5.0, key="crm_val_input")
             with col_vc2:
-                pag_crm_cad = st.selectbox("Pagamento Padrão*", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"])
+                pag_crm_cad = st.selectbox("Pagamento Padrão*", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], key="crm_pag_input")
 
-            ultimo_atendimento = st.date_input("Último Atendimento*", value=date.today(), format="DD/MM/YYYY")
+            ultimo_atendimento = st.date_input("Último Atendimento*", value=date.today(), format="DD/MM/YYYY", key="crm_data_input")
 
             salvar_crm = st.form_submit_button("Guardar no CRM")
 
@@ -512,9 +512,9 @@ with st.sidebar:
     else:
         st.header("➕ Nova Anotação")
         with st.form("form_tarefa", clear_on_submit=True):
-            titulo_t = st.text_input("Título / Lembrete*")
-            desc_t = st.text_area("Detalhes", placeholder="Ex: Comprar material")
-            prio_t = st.selectbox("Prioridade", ["Baixa", "Média", "Alta"], index=1)
+            titulo_t = st.text_input("Título / Lembrete*", key="tarefa_titulo_input")
+            desc_t = st.text_area("Detalhes", placeholder="Ex: Comprar material", key="tarefa_desc_input")
+            prio_t = st.selectbox("Prioridade", ["Baixa", "Média", "Alta"], index=1, key="tarefa_prio_input")
             salvar_t = st.form_submit_button("Guardar Tarefa")
 
             if salvar_t:
