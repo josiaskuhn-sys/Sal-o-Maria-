@@ -9,7 +9,7 @@ def init_db():
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
 
-    # Tabela 1: Agendamentos por Horário (com valor, pagamento e duração)
+    # Tabela 1: Agendamentos por Horário
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS agendamentos (
@@ -30,7 +30,6 @@ def init_db():
 
     c.execute("PRAGMA table_info(agendamentos)")
     colunas_atuais = [col[1] for col in c.fetchall()]
-
     if "valor" not in colunas_atuais:
         c.execute("ALTER TABLE agendamentos ADD COLUMN valor REAL DEFAULT 0.0")
     if "forma_pagamento" not in colunas_atuais:
@@ -65,7 +64,19 @@ def init_db():
     if "forma_pagamento" not in colunas_crm:
         c.execute("ALTER TABLE clientes_retencao ADD COLUMN forma_pagamento TEXT DEFAULT 'Pix'")
 
-    # Tabela 3: Minhas Tarefas / Anotações
+    # Tabela 3: Contatos Salvos (Independente)
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS contatos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            telefone TEXT,
+            profissional TEXT DEFAULT 'Maria'
+        )
+    """
+    )
+
+    # Tabela 4: Minhas Tarefas / Anotações
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS tarefas (
@@ -79,7 +90,7 @@ def init_db():
     """
     )
 
-    # Tabela 4: Lixeira Inteligente
+    # Tabela 5: Lixeira Inteligente
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS lixeira (
@@ -91,7 +102,7 @@ def init_db():
     """
     )
 
-    # Tabela 5: Configurações Gerais do Studio
+    # Tabela 6: Configurações Gerais do Studio
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS configuracoes (
@@ -101,7 +112,7 @@ def init_db():
     """
     )
 
-    # Tabela 6: Perfis, Senhas, Serviços e WhatsApp Individual
+    # Tabela 7: Perfis, Senhas, Serviços e WhatsApp
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS perfis (
@@ -140,7 +151,7 @@ def init_db():
 
 init_db()
 
-# --- FUNÇÕES DE BUSCA NA BASE DE DADOS ---
+# --- FUNÇÕES DE BUSCA ---
 def get_config(chave):
     conn = sqlite3.connect("agenda_unhas_v2.db")
     c = conn.cursor()
@@ -164,7 +175,7 @@ st.set_page_config(
     page_icon="💅",
 )
 
-# --- APLICAÇÃO DINÂMICA DE TEMAS COM CALENDÁRIO CLARO E INPUTS LEGÍVEIS ---
+# --- APLICAÇÃO DINÂMICA DE TEMAS ---
 tema_atual = get_config("tema_estilo")
 
 estilos_css = {
@@ -177,16 +188,13 @@ estilos_css = {
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #D6CEC2 !important; border-radius: 10px; }
             .stButton>button { background-color: #C5A059 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             div[data-testid="stMetricValue"] { color: #9A752A !important; font-weight: 700 !important; }
-            
             .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #1F1E1B !important; }
             .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #C5A059 !important; }
-
             input, textarea, select, input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
                 background-color: #FFFFFF !important; color: #1F1E1B !important; -webkit-text-fill-color: #1F1E1B !important; border: 1px solid #D6CEC2 !important; border-radius: 6px !important;
             }
             div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] { background-color: #FFFFFF !important; border-color: #D6CEC2 !important; color: #1F1E1B !important; }
             label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label { color: #2C2A26 !important; font-weight: 600 !important; }
-
             .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid { background-color: #FFFFFF !important; color: #1F1E1B !important; border-color: #E2DBD2 !important; }
             .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell { background-color: #FFFFFF !important; color: #1F1E1B !important; }
             .fc-daygrid-day-number { color: #1F1E1B !important; font-weight: 700 !important; font-size: 0.9rem !important; }
@@ -278,16 +286,13 @@ estilos_css = {
             div[data-testid="stExpander"] { background-color: #FFFFFF !important; border: 1px solid #DDD6FE !important; border-radius: 10px; }
             .stButton>button { background-color: #8B5CF6 !important; color: white !important; border-radius: 8px !important; border: none !important; font-weight: bold !important; width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             div[data-testid="stMetricValue"] { color: #7C3AED !important; font-weight: 700 !important; }
-            
             .stTabs [data-baseweb="tab-list"] button p { font-size: 0.95rem !important; font-weight: 700 !important; color: #2D263B !important; }
             .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] p { color: #7C3AED !important; }
-
             input, textarea, select, input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="password"] {
                 background-color: #FFFFFF !important; color: #2D263B !important; -webkit-text-fill-color: #2D263B !important; border: 1px solid #DDD6FE !important; border-radius: 6px !important;
             }
             div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] { background-color: #FFFFFF !important; border-color: #DDD6FE !important; color: #2D263B !important; }
             label, .stRadio label, .stSelectbox label, .stDateInput label, .stTimeInput label { color: #3A354A !important; font-weight: 600 !important; }
-
             .fc, .fc-theme-standard, .fc-view, .fc-scrollgrid, .fc-daygrid-body, .fc-timegrid { background-color: #FFFFFF !important; color: #2D263B !important; border-color: #DDD6FE !important; }
             .fc-daygrid-day, .fc-timegrid-slot, .fc-col-header-cell { background-color: #FFFFFF !important; color: #2D263B !important; }
             .fc-daygrid-day-number { color: #2D263B !important; font-weight: 700 !important; font-size: 0.9rem !important; }
@@ -300,8 +305,6 @@ estilos_css = {
 }
 
 st.markdown(estilos_css.get(tema_atual, estilos_css["Dourado Luxo"]), unsafe_allow_html=True)
-
-# --- BLOQUEIO ANTI-TRADUÇÃO ---
 st.markdown('<meta name="google" content="notranslate">', unsafe_allow_html=True)
 
 # --- CONTROLO DE SESSÃO / LOGIN ---
@@ -313,7 +316,6 @@ if "autenticado" not in st.session_state:
 if not st.session_state.autenticado:
     st.markdown("<br><br>", unsafe_allow_html=True)
     col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
-    
     with col_l2:
         with st.container(border=True):
             try:
@@ -346,6 +348,12 @@ perfil_atual = st.session_state.perfil
 _, servicos_str_db, whatsapp_prof_db = get_perfil_info(usuario_atual)
 servicos_disponiveis = [s.strip() for s in servicos_str_db.split("\n") if s.strip()]
 
+# Buscar contatos salvos para autocomplete
+conn_ct = sqlite3.connect("agenda_unhas_v2.db")
+df_contatos_db = pd.read_sql_query("SELECT nome, telefone FROM contatos WHERE profissional = ?", conn_ct, params=(usuario_atual,))
+conn_ct.close()
+lista_contatos_nomes = df_contatos_db["nome"].tolist() if not df_contatos_db.empty else []
+
 # --- BARRA LATERAL ---
 with st.sidebar:
     try:
@@ -377,8 +385,21 @@ with st.sidebar:
         st.header(f"➕ Agendar ({usuario_atual})")
 
         with st.form("form_rapido", clear_on_submit=True):
-            nome_cliente = st.text_input("Nome da Cliente*")
-            telefone = st.text_input("WhatsApp", placeholder="54991341375")
+            if lista_contatos_nomes:
+                tipo_nome = st.selectbox("Selecionar Cliente Salva", ["-- Digitar Novo Nome --"] + lista_contatos_nomes)
+                if tipo_nome != "-- Digitar Novo Nome --":
+                    nome_cliente = tipo_nome
+                    # Buscar telefone automaticamente se houver
+                    match_tel = df_contatos_db[df_contatos_db["nome"] == tipo_nome]["telefone"].values
+                    tel_sugestao = match_tel[0] if len(match_tel) > 0 and match_tel[0] else ""
+                else:
+                    nome_cliente = st.text_input("Nome da Cliente*")
+                    tel_sugestao = ""
+            else:
+                nome_cliente = st.text_input("Nome da Cliente*")
+                tel_sugestao = ""
+
+            telefone = st.text_input("WhatsApp", value=tel_sugestao, placeholder="54991341375")
             servico = st.selectbox("Serviço*", servicos_disponiveis)
             
             col_v1, col_v2 = st.columns(2)
@@ -387,7 +408,7 @@ with st.sidebar:
             with col_v2:
                 duracao_servico = st.selectbox("Duração*", [30, 45, 60, 90, 120, 150, 180], index=2, format_func=lambda x: f"{x} min")
 
-            forma_pagto = st.selectbox("Forma de Pagamento*", ["Pix", "Dinheiro", "Cartão Débito", "Cartão Crédito"])
+            forma_pagto = st.selectbox("Forma de Pagamento*", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"])
             
             data_atendimento = st.date_input("Data*", value=date.today(), format="DD/MM/YYYY")
             horario = st.time_input("Horário*", value=datetime.strptime("14:00", "%H:%M").time())
@@ -418,6 +439,11 @@ with st.sidebar:
                         ),
                     )
 
+                    # Garantir que está na tabela de contatos
+                    c.execute("SELECT id FROM contatos WHERE nome = ? AND profissional = ?", (nome_cliente, usuario_atual))
+                    if not c.fetchone():
+                        c.execute("INSERT INTO contatos (nome, telefone, profissional) VALUES (?, ?, ?)", (nome_cliente, telefone, usuario_atual))
+
                     c.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (nome_cliente, usuario_atual))
                     existente_crm = c.fetchone()
                     data_iso = data_atendimento.strftime("%Y-%m-%d")
@@ -429,7 +455,7 @@ with st.sidebar:
 
                     conn.commit()
                     conn.close()
-                    st.success("Horário marcado e cliente integrada ao CRM com sucesso!")
+                    st.success("Horário marcado com sucesso!")
                     st.rerun()
 
     elif tipo_cadastro == "👤 Cadastrar Cliente (CRM)":
@@ -448,7 +474,7 @@ with st.sidebar:
             with col_vc1:
                 val_crm_cad = st.number_input("Valor Padrão (R$)*", min_value=0.0, value=50.0, step=5.0)
             with col_vc2:
-                pag_crm_cad = st.selectbox("Pagamento Padrão*", ["Pix", "Dinheiro", "Cartão Débito", "Cartão Crédito"])
+                pag_crm_cad = st.selectbox("Pagamento Padrão*", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"])
 
             ultimo_atendimento = st.date_input("Último Atendimento*", value=date.today(), format="DD/MM/YYYY")
 
@@ -462,6 +488,11 @@ with st.sidebar:
                     conn = sqlite3.connect("agenda_unhas_v2.db")
                     c = conn.cursor()
                     data_iso = ultimo_atendimento.strftime("%Y-%m-%d")
+                    
+                    c.execute("SELECT id FROM contatos WHERE nome = ? AND profissional = ?", (nome, usuario_atual))
+                    if not c.fetchone():
+                        c.execute("INSERT INTO contatos (nome, telefone, profissional) VALUES (?, ?, ?)", (nome, telefone, usuario_atual))
+
                     c.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (nome, usuario_atual))
                     existente = c.fetchone()
 
@@ -502,7 +533,7 @@ subtitulo_atual = get_config("subtitulo_studio")
 emoji_perfil = "💅" if usuario_atual == "Maria" else "👁️✨"
 st.title(f"{emoji_perfil} {titulo_atual} — Painel da {usuario_atual}")
 
-# --- CENTRAL DE ALERTAS COM NOMES ---
+# --- CENTRAL DE ALERTAS ---
 conn = sqlite3.connect("agenda_unhas_v2.db")
 hoje_str = date.today().isoformat()
 
@@ -566,7 +597,7 @@ aba_agenda, aba_crm, aba_fin, aba_contatos, aba_tarefas, aba_lixeira, aba_config
         "📇 Contatos",
         "📝 Tarefas",
         "🗑️ Lixeira",
-        "⚙️ Configurações",
+        "⚙️️ Configurações",
     ]
 )
 
@@ -695,9 +726,41 @@ with aba_agenda:
                     if row["telefone"]:
                         tel_digits = "".join(filter(str.isdigit, str(row["telefone"])))
                         if tel_digits and tel_digits != "Naoinformado":
-                            msg = f"Olá {row['nome_cliente']}! Confirmado seu horário para {row['servico']} hoje às {row['horario']}?"
+                            if usuario_atual == "Maria":
+                                dt_atend = datetime.strptime(str(row['data_atendimento']), "%Y-%m-%d")
+                                dias_sem_pt = {0: "Segunda", 1: "Terça", 2: "Quarta", 3: "Quinta", 4: "Sexta", 5: "Sábado", 6: "Domingo"}
+                                dia_sem_nome = dias_sem_pt.get(dt_atend.weekday(), "")
+                                data_fmt_msg = dt_atend.strftime("%d/%m")
+                                msg = f"Olá, {row['nome_cliente']}! Estou passando para te lembrar que possui um agendamento para o dia {data_fmt_msg} / ({dia_sem_nome}-Feira) às {row['horario']}h. Confirme o agendamento respondendo: Confirmar ou Reagendar ou Cancelar."
+                            else:
+                                msg = f"Olá {row['nome_cliente']}! Confirmado seu horário para {row['servico']} hoje às {row['horario']}?"
+                            
                             link_wa = f"https://wa.me/55{tel_digits}?text={msg.replace(' ', '%20')}"
                             st.markdown(f"[💬 Mandar Lembrete no WhatsApp]({link_wa})")
+
+                    # OPÇÃO DE EDITAR ATENDIMENTO (PÓS-ATENDIMENTO)
+                    with st.expander("✏️ Editar Atendimento / Valores / Serviço"):
+                        with st.form(f"form_ed_atend_{row['id']}"):
+                            novo_servico_card = st.selectbox("Serviço", servicos_disponiveis, index=servicos_disponiveis.index(row['servico']) if row['servico'] in servicos_disponiveis else 0)
+                            col_ev1, col_ev2 = st.columns(2)
+                            with col_ev1:
+                                novo_val_card = st.number_input("Valor (R$)", min_value=0.0, value=float(row['valor']), step=5.0)
+                            with col_ev2:
+                                novo_pag_card = st.selectbox("Pagamento", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], index=["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"].index(row['forma_pagamento']) if row['forma_pagamento'] in ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"] else 0)
+                            
+                            novo_dur_card = st.selectbox("Duração", [30, 45, 60, 90, 120, 150, 180], index=[30, 45, 60, 90, 120, 150, 180].index(int(row['duracao_minutos'])) if int(row['duracao_minutos']) in [30, 45, 60, 90, 120, 150, 180] else 2, format_func=lambda x: f"{x} min")
+                            novo_hor_card = st.time_input("Horário", value=datetime.strptime(row['horario'], "%H:%M").time())
+                            
+                            salvar_edicao_atend = st.form_submit_button("Guardar Alterações do Atendimento")
+                            if salvar_edicao_atend:
+                                conn_ed = sqlite3.connect("agenda_unhas_v2.db")
+                                c_ed = conn_ed.cursor()
+                                c_ed.execute("UPDATE agendamentos SET servico = ?, valor = ?, forma_pagamento = ?, duracao_minutos = ?, horario = ? WHERE id = ?",
+                                             (novo_servico_card, novo_val_card, novo_pag_card, novo_dur_card, str(novo_hor_card)[:5], row['id']))
+                                conn_ed.commit()
+                                conn_ed.close()
+                                st.success("Atendimento atualizado com sucesso!")
+                                st.rerun()
 
                     st.write("🔁 **Ciclo de Retorno:**")
                     ciclo_escolha = st.selectbox(
@@ -726,7 +789,7 @@ with aba_agenda:
                                              (row['nome_cliente'], tel_reg, ciclo_card, row['data_atendimento'], usuario_atual, row['valor'], row['forma_pagamento']))
                         conn_c.commit()
                         conn_c.close()
-                        st.success(f"Cliente {row['nome_cliente']} adicionada/atualizada no CRM com ciclo de {ciclo_card} dias!")
+                        st.success(f"Cliente {row['nome_cliente']} adicionada/atualizada no CRM!")
                         st.rerun()
 
                     novo_status = st.selectbox(
@@ -737,7 +800,7 @@ with aba_agenda:
 
                     col_btn1, col_btn2 = st.columns(2)
                     with col_btn1:
-                        if st.button("Atualizar", key=f"btn_update_{row['id']}"):
+                        if st.button("Atualizar Status", key=f"btn_update_{row['id']}"):
                             conn = sqlite3.connect("agenda_unhas_v2.db")
                             c = conn.cursor()
                             c.execute("UPDATE agendamentos SET status = ? WHERE id = ?", (novo_status, row["id"]))
@@ -763,6 +826,7 @@ with aba_agenda:
 with aba_crm:
     conn = sqlite3.connect("agenda_unhas_v2.db")
     df_crm = pd.read_sql_query("SELECT * FROM clientes_retencao WHERE profissional = ?", conn, params=(usuario_atual,))
+    df_agendamentos_todos = pd.read_sql_query("SELECT * FROM agendamentos WHERE profissional = ?", conn, params=(usuario_atual,))
     conn.close()
 
     if not df_crm.empty:
@@ -797,7 +861,7 @@ with aba_crm:
         col_m3.metric("Hoje", hoje.strftime("%d/%m/%Y"))
 
         st.divider()
-        sub_aba1, sub_aba2 = st.tabs(["📲 Chamar Esta Semana", "📋 Todas as Clientes"])
+        sub_aba1, sub_aba_semana, sub_aba2 = st.tabs(["📲 Chamar Esta Semana (Retorno)", "📅 Visão Semanal (Atendimentos)", "📋 Todas as Clientes"])
 
         with sub_aba1:
             if chamar_semana.empty:
@@ -812,8 +876,8 @@ with aba_crm:
                         with col_val_crm:
                             val_atend_hoje = st.number_input("Valor (R$)", min_value=0.0, value=float(row.get('valor', 50.0)), step=5.0, key=f"val_crm_{row['id']}")
                         with col_pag_crm:
-                            pag_atend_hoje = st.selectbox("Pagamento", ["Pix", "Dinheiro", "Cartão Débito", "Cartão Crédito"], 
-                                                          index=["Pix", "Dinheiro", "Cartão Débito", "Cartão Crédito"].index(row.get('forma_pagamento', 'Pix')) if row.get('forma_pagamento') in ["Pix", "Dinheiro", "Cartão Débito", "Cartão Crédito"] else 0,
+                            pag_atend_hoje = st.selectbox("Pagamento", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], 
+                                                          index=["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"].index(row.get('forma_pagamento', 'Pix')) if row.get('forma_pagamento') in ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"] else 0,
                                                           key=f"pag_crm_{row['id']}")
 
                         digits_cli = "".join(filter(str.isdigit, str(row['telefone']))) if row['telefone'] else ""
@@ -837,14 +901,67 @@ with aba_crm:
                                           (row['nome'], row['telefone'], 'Manutenção / Retorno', hoje_iso, '12:00', usuario_atual, val_atend_hoje, pag_atend_hoje, 60, 'Realizado'))
                                 conn.commit()
                                 conn.close()
-                                st.success(f"Atendimento de {row['nome']} registrado com sucesso e enviado ao financeiro!")
+                                st.success(f"Atendimento de {row['nome']} registrado com sucesso!")
                                 st.rerun()
+
+        with sub_aba_semana:
+            st.markdown(f"### 📅 Lista de Agendamentos da Semana ({inicio_sem.strftime('%d/%m')} a {fim_sem.strftime('%d/%m')})")
+            if not df_agendamentos_todos.empty:
+                df_agendamentos_todos["data_dt"] = pd.to_datetime(df_agendamentos_todos["data_atendimento"]).dt.date
+                agendamentos_semana = df_agendamentos_todos[(df_agendamentos_todos["data_dt"] >= inicio_semana) & (df_agendamentos_todos["data_dt"] <= fim_semana)].sort_values(by=["data_atendimento", "horario"])
+                
+                if not agendamentos_semana.empty:
+                    for _, ag_row in agendamentos_semana.iterrows():
+                        with st.container(border=True):
+                            dt_fmt = pd.to_datetime(ag_row['data_atendimento']).strftime('%d/%m/%Y')
+                            st.markdown(f"**👤 {ag_row['nome_cliente']}** — 📅 {dt_fmt} às ⏰ {ag_row['horario']}")
+                            st.write(f"💅 **Serviço:** {ag_row['servico']} | ⏱️ {ag_row['duracao_minutos']} min | 💰 R$ {ag_row['valor']:.2f} ({ag_row['forma_pagamento']}) | Status: *{ag_row['status']}*")
+                            
+                            with st.expander(f"✏️ Editar Agendamento de {ag_row['nome_cliente']}"):
+                                with st.form(f"form_crm_semana_{ag_row['id']}"):
+                                    s_serv = st.selectbox("Serviço", servicos_disponiveis, index=servicos_disponiveis.index(ag_row['servico']) if ag_row['servico'] in servicos_disponiveis else 0)
+                                    col_cs1, col_cs2 = st.columns(2)
+                                    with col_cs1:
+                                        s_val = st.number_input("Valor (R$)", min_value=0.0, value=float(ag_row['valor']), step=5.0)
+                                    with col_cs2:
+                                        s_pag = st.selectbox("Pagamento", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], index=["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"].index(ag_row['forma_pagamento']) if ag_row['forma_pagamento'] in ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"] else 0)
+                                    s_dur = st.selectbox("Duração (min)", [30, 45, 60, 90, 120, 150, 180], index=2)
+                                    s_hor = st.time_input("Horário", value=datetime.strptime(ag_row['horario'], "%H:%M").time())
+                                    
+                                    if st.form_submit_button("Salvar Alterações na Semana"):
+                                        conn_s = sqlite3.connect("agenda_unhas_v2.db")
+                                        cs = conn_s.cursor()
+                                        cs.execute("UPDATE agendamentos SET servico = ?, valor = ?, forma_pagamento = ?, duracao_minutos = ?, horario = ? WHERE id = ?",
+                                                   (s_serv, s_val, s_pag, s_dur, str(s_hor)[:5], ag_row['id']))
+                                        conn_s.commit()
+                                        conn_s.close()
+                                        st.success("Atualizado com sucesso!")
+                                        st.rerun()
+                else:
+                    st.info("Nenhum atendimento agendado para esta semana.")
+            else:
+                st.info("Nenhum agendamento registado.")
 
         with sub_aba2:
             for _, row in df_crm.iterrows():
                 with st.expander(f"👤 {row['nome']} (Retorno: {row['proximo_atendimento'].strftime('%d/%m/%Y')})"):
                     st.write(f"📱 WhatsApp: {row['telefone']}")
                     st.write(f"💰 Valor Padrão: R$ {row.get('valor', 50.0):.2f} ({row.get('forma_pagamento', 'Pix')}) | Ciclo: {row['ciclo_dias']} dias")
+
+                    digits_cli = "".join(filter(str.isdigit, str(row['telefone']))) if row['telefone'] else ""
+                    if digits_cli and digits_cli != "Naoinformado":
+                        msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já deu o prazo da sua manutenção!"
+                        link_wa = f"https://wa.me/55{digits_cli}?text={msg.replace(' ', '%20')}"
+                        st.markdown(
+                            f"""
+                            <a href="{link_wa}" target="_blank" style="text-decoration: none;">
+                                <button style="background-color: #25D366; color: white; padding: 8px 16px; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-bottom: 10px;">
+                                    💬 Enviar Mensagem no WhatsApp
+                                </button>
+                            </a>
+                        """,
+                            unsafe_allow_html=True,
+                        )
                     
                     st.markdown("---")
                     st.write("✏️ **Editar Dados da Cliente e Ciclo:**")
@@ -863,8 +980,8 @@ with aba_crm:
                     
                     with col_e2:
                         ed_valor = st.number_input("Valor Padrão (R$)", min_value=0.0, value=float(row.get('valor', 50.0)), step=5.0, key=f"ed_val_{row['id']}")
-                        ed_pag = st.selectbox("Forma de Pagamento", ["Pix", "Dinheiro", "Cartão Débito", "Cartão Crédito"], 
-                                              index=["Pix", "Dinheiro", "Cartão Débito", "Cartão Crédito"].index(row.get('forma_pagamento', 'Pix')) if row.get('forma_pagamento') in ["Pix", "Dinheiro", "Cartão Débito", "Cartão Crédito"] else 0,
+                        ed_pag = st.selectbox("Forma de Pagamento", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], 
+                                              index=["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"].index(row.get('forma_pagamento', 'Pix')) if row.get('forma_pagamento') in ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"] else 0,
                                               key=f"ed_pag_{row['id']}")
 
                     if st.button("💾 Salvar Alterações", key=f"btn_salvar_cli_{row['id']}"):
@@ -874,23 +991,23 @@ with aba_crm:
                                   (ed_ciclo_final, ed_valor, ed_pag, row['id']))
                         conn_e.commit()
                         conn_e.close()
-                        st.success(f"Dados da cliente {row['nome']} atualizados com sucesso!")
+                        st.success("Atualizado com sucesso!")
                         st.rerun()
 
                     st.markdown("---")
-                    if st.button("🗑️ Excluir do CRM (Mantém na Agenda)", key=f"del_crm_{row['id']}"):
+                    if st.button("🗑️ Excluir do CRM", key=f"del_crm_{row['id']}"):
                         conn = sqlite3.connect("agenda_unhas_v2.db")
                         c = conn.cursor()
                         c.execute("DELETE FROM clientes_retencao WHERE id = ?", (row["id"],))
                         conn.commit()
                         conn.close()
-                        st.success(f"Cliente {row['nome']} removida do CRM. O histórico na agenda foi preservado.")
+                        st.success("Removida do CRM.")
                         st.rerun()
     else:
         st.info("Nenhuma cliente cadastrada no CRM.")
 
 # ==========================================
-# ABA 3: FINANCEIRO & GANHOS (COM RELATÓRIO PDF)
+# ABA 3: FINANCEIRO & GANHOS
 # ==========================================
 with aba_fin:
     st.subheader(f"📊 Relatório Financeiro — {usuario_atual}")
@@ -946,101 +1063,79 @@ with aba_fin:
 
             html_documento = f"""
             <html>
-            <head>
-                <meta charset="utf-8">
-                <title>Relatório Financeiro - {usuario_atual}</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; color: #333; margin: 40px; }}
-                    h1 {{ color: #C5A059; border-bottom: 2px solid #C5A059; padding-bottom: 10px; }}
-                    .info {{ margin-bottom: 20px; font-size: 15px; }}
-                    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-                    th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }}
-                    th {{ background-color: #F4EFEA; color: #333; }}
-                    .totais {{ background-color: #F9F9F9; padding: 15px; border-radius: 8px; margin-top: 20px; }}
-                </style>
-            </head>
+            <head><meta charset="utf-8"><title>Relatório - {usuario_atual}</title></head>
             <body>
-                <h1>💅 {titulo_atual} — Relatório Financeiro</h1>
-                <div class="info">
-                    <p><b>Profissional:</b> {usuario_atual}</p>
-                    <p><b>Período:</b> {filtro_periodo} (Gerado em {date.today().strftime('%d/%m/%Y')})</p>
-                </div>
-                <div class="totais">
-                    <h3>Resumo do Período</h3>
-                    <p><b>Total Faturado:</b> R$ {total_ganho:.2f}</p>
-                    <p><b>Total de Atendimentos:</b> {qtd_atendimentos}</p>
-                    <p><b>Ticket Médio:</b> R$ {ticket_medio:.2f}</p>
-                    <h4>Faturamento por Forma de Pagamento:</h4>
-                    <ul>{pagto_html}</ul>
-                </div>
-                <h3>Detalhamento dos Atendimentos</h3>
-                <table>
-                    <tr>
-                        <th>Data</th>
-                        <th>Horário</th>
-                        <th>Cliente</th>
-                        <th>Serviço</th>
-                        <th>Valor</th>
-                        <th>Pagamento</th>
-                    </tr>
+                <h1>💅 {titulo_atual} — Relatório Financeiro ({usuario_atual})</h1>
+                <p><b>Período:</b> {filtro_periodo}</p>
+                <h3>Total Faturado: R$ {total_ganho:.2f} | Atendimentos: {qtd_atendimentos}</h3>
+                <ul>{pagto_html}</ul>
+                <table border="1" cellpadding="5" style="border-collapse:collapse; width:100%;">
+                    <tr><th>Data</th><th>Horário</th><th>Cliente</th><th>Serviço</th><th>Valor</th><th>Pagamento</th></tr>
                     {linhas_tabela}
                 </table>
             </body>
             </html>
             """
-
-            st.download_button(
-                label="📥 Baixar Relatório em PDF / Impressão",
-                data=html_documento,
-                file_name=f"relatorio_financeiro_{usuario_atual}_{filtro_periodo.lower().replace(' ', '_')}.html",
-                mime="text/html",
-                help="Baixa o documento estilizado. Ao abrir no PC ou telemóvel, basta clicar em Imprimir / Guardar como PDF."
-            )
+            st.download_button("📥 Baixar Relatório em PDF / HTML", data=html_documento, file_name=f"relatorio_{usuario_atual}.html", mime="text/html")
 
         st.markdown("### 💳 Faturamento por Forma de Pagamento")
-        if not df_filtrado.empty:
-            pagto_resumo = df_filtrado.groupby("forma_pagamento")["valor"].sum().reset_index()
-            for _, r in pagto_resumo.iterrows():
-                st.write(f"- **{r['forma_pagamento']}:** R$ {r['valor']:.2f}")
+        pagto_resumo = df_filtrado.groupby("forma_pagamento")["valor"].sum().reset_index()
+        for _, r in pagto_resumo.iterrows():
+            st.write(f"- **{r['forma_pagamento']}:** R$ {r['valor']:.2f}")
 
-            st.divider()
-            st.markdown("### 📋 Detalhado dos Atendimentos no Período")
-            st.dataframe(df_filtrado[["data_atendimento", "horario", "nome_cliente", "servico", "valor", "forma_pagamento"]], use_container_width=True)
-        else:
-            st.info("Nenhum atendimento registrado neste período.")
+        st.dataframe(df_filtrado[["data_atendimento", "horario", "nome_cliente", "servico", "valor", "forma_pagamento"]], use_container_width=True)
     else:
         st.info("Nenhum dado financeiro registrado ainda.")
 
 # ==========================================
-# ABA 4: CONTATOS (NOVA AGENDA DE CONTATOS)
+# ABA 4: CONTATOS (COM OPÇÃO DE ADICIONAR)
 # ==========================================
 with aba_contatos:
     st.subheader(f"📇 Agenda de Contatos — {usuario_atual}")
-    st.write("Lista completa com todas as suas clientes cadastradas no sistema, com atalho direto para o WhatsApp.")
+    st.write("Adicione novos contatos aqui para que o sistema sugira automaticamente ao agendar.")
+
+    with st.form("form_novo_contato_tab", clear_on_submit=True):
+        st.markdown("### ➕ Adicionar Novo Contato")
+        novo_c_nome = st.text_input("Nome da Cliente*")
+        novo_c_tel = st.text_input("WhatsApp", placeholder="54991341375")
+        btn_salvar_c = st.form_submit_button("Guardar Contato na Agenda")
+        
+        if btn_salvar_c:
+            if not novo_c_nome:
+                st.error("Preencha o nome da cliente!")
+            else:
+                conn_nc = sqlite3.connect("agenda_unhas_v2.db")
+                cnc = conn_nc.cursor()
+                cnc.execute("SELECT id FROM contatos WHERE nome = ? AND profissional = ?", (novo_c_nome, usuario_atual))
+                if cnc.fetchone():
+                    cnc.execute("UPDATE contatos SET telefone = ? WHERE nome = ? AND profissional = ?", (novo_c_tel, novo_c_nome, usuario_atual))
+                    st.success(f"Contato de {novo_c_nome} atualizado!")
+                else:
+                    cnc.execute("INSERT INTO contatos (nome, telefone, profissional) VALUES (?, ?, ?)", (novo_c_nome, novo_c_tel, usuario_atual))
+                    st.success(f"Contato de {novo_c_nome} guardado com sucesso!")
+                conn_nc.commit()
+                conn_nc.close()
+                st.rerun()
+
+    st.divider()
 
     conn = sqlite3.connect("agenda_unhas_v2.db")
-    df_cli_crm = pd.read_sql_query("SELECT nome, telefone FROM clientes_retencao WHERE profissional = ?", conn, params=(usuario_atual,))
-    df_cli_ag = pd.read_sql_query("SELECT DISTINCT nome_cliente as nome, telefone FROM agendamentos WHERE profissional = ?", conn, params=(usuario_atual,))
+    df_contatos_tabela = pd.read_sql_query("SELECT * FROM contatos WHERE profissional = ? ORDER BY nome ASC", conn, params=(usuario_atual,))
     conn.close()
 
-    df_contatos_geral = pd.concat([df_cli_crm, df_cli_ag]).drop_duplicates(subset=['nome']).sort_values('nome')
-
-    if not df_contatos_geral.empty:
-        busca_agenda = st.text_input("🔍 Pesquisar na Agenda de Contatos:", placeholder="Digite o nome ou número da cliente...")
-        
+    if not df_contatos_tabela.empty:
+        busca_agenda = st.text_input("🔍 Pesquisar na Agenda de Contatos:", placeholder="Digite o nome ou número...")
         if busca_agenda:
-            df_contatos_geral = df_contatos_geral[df_contatos_geral["nome"].str.contains(busca_agenda, case=False, na=False) | df_contatos_geral["telefone"].str.contains(busca_agenda, case=False, na=False)]
+            df_contatos_tabela = df_contatos_tabela[df_contatos_tabela["nome"].str.contains(busca_agenda, case=False, na=False) | df_contatos_tabela["telefone"].str.contains(busca_agenda, case=False, na=False)]
 
-        st.markdown(f"**Total de contatos encontrados:** {len(df_contatos_geral)}")
-        st.divider()
-
+        st.markdown(f"**Total de contatos:** {len(df_contatos_tabela)}")
         cols_cont = st.columns(2)
-        for idx, row in df_contatos_geral.reset_index().iterrows():
+        for idx, row in df_contatos_tabela.reset_index().iterrows():
             col_atual = cols_cont[idx % 2]
             with col_atual:
                 with st.container(border=True):
                     st.markdown(f"### 👤 {row['nome']}")
-                    tel_exib = row['telefone'] if row['telefone'] and row['telefone'] != "Não informado" else "Não cadastrado"
+                    tel_exib = row['telefone'] if row['telefone'] else "Não cadastrado"
                     st.write(f"📱 **WhatsApp:** {tel_exib}")
 
                     digits_cont = "".join(filter(str.isdigit, str(row['telefone']))) if row['telefone'] else ""
@@ -1056,8 +1151,6 @@ with aba_contatos:
                         """,
                             unsafe_allow_html=True,
                         )
-                    else:
-                        st.info("Sem WhatsApp válido para chat direto.")
     else:
         st.info("Nenhum contato cadastrado ainda.")
 
@@ -1115,21 +1208,20 @@ with aba_config:
     with st.form("form_config"):
         novo_titulo = st.text_input("Nome do Studio:", value=titulo_atual)
         
-        # Manter o tema atual selecionado no dropdown
         temas_disponiveis = ["Dourado Luxo", "Clean White (Tudo Branco)", "Nude / Rosé", "Dark Elegance", "Lavanda / Soft Purple"]
         idx_tema_atual = temas_disponiveis.index(tema_atual) if tema_atual in temas_disponiveis else 0
         novo_tema = st.selectbox("Tema Visual:", temas_disponiveis, index=idx_tema_atual)
         
         _, servicos_atuais_db, wa_db = get_perfil_info(usuario_atual)
-        novo_wa = st.text_input("O meu WhatsApp (ex: 5554992508467):", value=wa_db)
+        novo_wa = st.text_input("O meu WhatsApp:", value=wa_db)
         novos_servicos = st.text_area("Os meus Serviços (um por linha):", value=servicos_atuais_db, height=120)
         
         nova_senha = st.text_input("Nova Palavra-passe (opcional):", type="password")
         repete_senha = st.text_input("Repetir Nova Palavra-passe:", type="password")
 
         if st.form_submit_button("Guardar Alterações"):
-            if nova_senha != repete_senha:
-                st.error("As palavras-passe não coincidem! Por favor, introduza a mesma palavra-passe em ambos os campos.")
+            if nova_senha and nova_senha != repete_senha:
+                st.error("As palavras-passe não coincidem!")
             else:
                 conn = sqlite3.connect("agenda_unhas_v2.db")
                 c = conn.cursor()
@@ -1141,5 +1233,13 @@ with aba_config:
                     c.execute("UPDATE perfis SET servicos = ?, whatsapp = ? WHERE nome = ?", (novos_servicos, novo_wa, usuario_atual))
                 conn.commit()
                 conn.close()
-                st.success("Guardado com sucesso! A atualizar tema...")
-                st.re
+                st.success("Guardado com sucesso! A atualizar...")
+                st.rerun()
+
+    st.divider()
+    st.subheader("🛡️ Cópia de Segurança do Sistema")
+    try:
+        with open("agenda_unhas_v2.db", "rb") as f:
+            st.download_button("📥 Descarregar Base de Dados (.db)", f, file_name=f"backup_studio_{date.today()}.db")
+    except:
+        st.error("Erro ao gerar cópia de segurança.")
