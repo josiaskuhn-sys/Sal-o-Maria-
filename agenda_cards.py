@@ -384,7 +384,6 @@ with st.sidebar:
     if tipo_cadastro == "📅 Novo Agendamento (Horário)":
         st.header(f"➕ Agendar ({usuario_atual})")
 
-        # ORIGEM DA CLIENTE FORA DO FORMULÁRIO PARA ATUALIZAR INSTANTANEAMENTE
         modo_cli = st.radio("Origem da Cliente:", ["Cliente Existente", "Novo Contato"], horizontal=True, key="modo_cli_agenda_radio")
 
         with st.form("form_rapido", clear_on_submit=True):
@@ -408,7 +407,7 @@ with st.sidebar:
             with col_v1:
                 valor_servico = st.number_input("Valor (R$)*", min_value=0.0, value=50.0, step=5.0, key="valor_agendamento_form")
             with col_v2:
-                duracao_servico = st.selectbox("Duração*", [30, 45, 60, 90, 120, 150, 180], index=2, format_func=lambda x: f"{x} min", key="duracao_agendamento_form")
+                duracao_servico = st.number_input("Duração (minutos)*", min_value=5, max_value=480, value=60, step=5, key="duracao_agendamento_form")
 
             forma_pagto = st.selectbox("Forma de Pagamento*", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], key="pagto_agendamento_form")
             
@@ -437,7 +436,7 @@ with st.sidebar:
                             usuario_atual,
                             valor_servico,
                             forma_pagto,
-                            duracao_servico,
+                            int(duracao_servico),
                         ),
                     )
 
@@ -537,7 +536,7 @@ subtitulo_atual = get_config("subtitulo_studio")
 emoji_perfil = "💅" if usuario_atual == "Maria" else "👁️✨"
 st.title(f"{emoji_perfil} {titulo_atual} — Painel da {usuario_atual}")
 
-# --- CENTRAL DE ALERTAS ---
+# --- CENTRAL DE ALERTAS (HOJE + SEMANA CRM) ---
 conn = sqlite3.connect("agenda_unhas_v2.db")
 hoje_str = date.today().isoformat()
 
@@ -546,18 +545,21 @@ df_agenda_hoje = pd.read_sql_query(
     conn, params=(hoje_str, usuario_atual)
 )
 
-df_crm_tudo = pd.read_sql_query("SELECT id, nome, ultimo_atendimento, ciclo_dias FROM clientes_retencao WHERE profissional = ?", conn, params=(usuario_atual,))
+df_crm_tudo = pd.read_sql_query("SELECT id, nome, telefone, ultimo_atendimento, ciclo_dias FROM clientes_retencao WHERE profissional = ?", conn, params=(usuario_atual,))
 conn.close()
+
+hoje_dt = date.today()
+inicio_semana = hoje_dt - timedelta(days=hoje_dt.weekday())
+fim_semana = inicio_semana + timedelta(days=6)
 
 if not df_crm_tudo.empty:
     df_crm_tudo["ultimo_atendimento"] = pd.to_datetime(df_crm_tudo["ultimo_atendimento"], errors="coerce").dt.date
     df_crm_tudo["proximo_atendimento"] = df_crm_tudo.apply(lambda r: r["ultimo_atendimento"] + timedelta(days=int(r["ciclo_dias"])), axis=1)
-    df_crm_tudo["dias_atraso"] = df_crm_tudo["proximo_atendimento"].apply(lambda d: (date.today() - d).days)
-    df_crm_pendente = df_crm_tudo[df_crm_tudo["proximo_atendimento"] <= date.today()].sort_values(by="dias_atraso", ascending=False)
+    df_crm_tudo["dias_atraso"] = df_crm_tudo["proximo_atendimento"].apply(lambda d: (hoje_dt - d).days)
+    chamar_semana_topo = df_crm_tudo[(df_crm_tudo["proximo_atendimento"] >= inicio_semana) & (df_crm_tudo["proximo_atendimento"] <= fim_semana)].sort_values(by="proximo_atendimento")
 else:
-    df_crm_pendente = pd.DataFrame()
+    chamar_semana_topo = pd.DataFrame()
 
-hoje_dt = date.today()
 ultimo_dia_mes = (hoje_dt.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 aviso_fim_mes = ""
 if hoje_dt.day >= ultimo_dia_mes.day - 3:
@@ -567,7 +569,7 @@ if hoje_dt.day >= ultimo_dia_mes.day - 3:
     faturamento_mes_atual = df_mes_atual["valor"].sum() if not df_mes_atual.empty else 0.0
     aviso_fim_mes = f"🎉 **Fechamento de Mês:** O mês está a acabar! O seu faturamento total até agora é de **R$ {faturamento_mes_atual:.2f}**. Parabéns!"
 
-if not df_agenda_hoje.empty or not df_crm_pendente.empty or aviso_fim_mes:
+if not df_agenda_hoje.empty or not chamar_semana_topo.empty or aviso_fim_mes:
     with st.expander("🔔 Central de Notificações Internas", expanded=True):
         if aviso_fim_mes:
             st.success(aviso_fim_mes)
@@ -580,16 +582,15 @@ if not df_agenda_hoje.empty or not df_crm_pendente.empty or aviso_fim_mes:
             else:
                 st.info("📅 Sem agendamentos para hoje.")
         with col_al2:
-            if not df_crm_pendente.empty:
-                st.error(f"⚠️ **CRM Para Chamar ({len(df_crm_pendente)}):**")
-                for _, row in df_crm_pendente.iterrows():
-                    dias = row["dias_atraso"]
-                    status_dias = "Vence hoje" if dias == 0 else f"Atrasada há {dias} dia(s)"
-                    st.markdown(f"- 👤 **{row['nome']}** *({status_dias})*")
+            if not chamar_semana_topo.empty:
+                st.info(f"📲 **CRM para Chamar esta Semana ({len(chamar_semana_topo)}):**")
+                for _, row in chamar_semana_topo.iterrows():
+                    dt_prox_fmt = row["proximo_atendimento"].strftime('%d/%m')
+                    st.markdown(f"- 👤 **{row['nome']}** *(Retorno: {dt_prox_fmt})*")
             else:
-                st.success("✅ Nenhuma cliente pendente no CRM.")
+                st.success("✅ Nenhuma cliente para chamar esta semana.")
 else:
-    st.success("✅ Tudo em dia! Sem pendências para hoje.")
+    st.success("✅ Tudo em dia! Sem pendências para hoje ou esta semana.")
 
 st.divider()
 
@@ -690,20 +691,39 @@ with aba_agenda:
     )
 
     st.divider()
+    st.markdown("### 📋 Filtro e Consulta de Atendimentos")
 
-    data_selecionada = st.date_input("📆 Ver detalhes do dia:", value=date.today(), format="DD/MM/YYYY", key=f"date_agenda_{usuario_atual}")
+    modo_filtro_data = st.radio(
+        "Como deseja visualizar os agendamentos abaixo?",
+        ["📆 Apenas um Dia", "📅 Por Período (Intervalo de Datas)"],
+        horizontal=True,
+        key=f"modo_filtro_{usuario_atual}"
+    )
 
     conn = sqlite3.connect("agenda_unhas_v2.db")
-    df = pd.read_sql_query("SELECT * FROM agendamentos WHERE data_atendimento = ? AND profissional = ? ORDER BY horario ASC", conn, params=(str(data_selecionada), usuario_atual))
-    conn.close()
-
-    st.markdown(f"### 📋 Horários de **{data_selecionada.strftime('%d/%m/%Y')}**")
+    if modo_filtro_data == "📆 Apenas um Dia":
+        data_selecionada = st.date_input("📆 Selecione o dia:", value=date.today(), format="DD/MM/YYYY", key=f"date_agenda_{usuario_atual}")
+        df = pd.read_sql_query("SELECT * FROM agendamentos WHERE data_atendimento = ? AND profissional = ? ORDER BY horario ASC", conn, params=(str(data_selecionada), usuario_atual))
+        conn.close()
+        st.markdown(f"### 📋 Horários de **{data_selecionada.strftime('%d/%m/%Y')}** ({len(df)} encontrados)")
+    else:
+        col_df1, col_df2 = st.columns(2)
+        with col_df1:
+            data_inicio = st.date_input("Data Inicial:", value=date.today().replace(day=1), format="DD/MM/YYYY", key=f"data_ini_{usuario_atual}")
+        with col_df2:
+            data_fim = st.date_input("Data Final:", value=date.today(), format="DD/MM/YYYY", key=f"data_fim_{usuario_atual}")
+        
+        df = pd.read_sql_query("SELECT * FROM agendamentos WHERE data_atendimento >= ? AND data_atendimento <= ? AND profissional = ? ORDER BY data_atendimento ASC, horario ASC", 
+                               conn, params=(str(data_inicio), str(data_fim), usuario_atual))
+        conn.close()
+        st.markdown(f"### 📋 Horários de **{data_inicio.strftime('%d/%m/%Y')}** até **{data_fim.strftime('%d/%m/%Y')}** ({len(df)} encontrados)")
 
     if not df.empty:
         emoji_msg = "💅" if usuario_atual == "Maria" else "👁️✨"
-        texto_resumo = f"{emoji_msg} *Resumo de Atendimentos ({data_selecionada.strftime('%d/%m/%Y')} - {usuario_atual}):*\n\n"
+        texto_resumo = f"{emoji_msg} *Resumo de Atendimentos ({usuario_atual}):*\n\n"
         for _, row in df.iterrows():
-            texto_resumo += f"⏰ *{row['horario']}* — {row['nome_cliente']} ({row['servico']}) | R$ {row['valor']:.2f}\n"
+            dt_r_fmt = datetime.strptime(str(row['data_atendimento']), "%Y-%m-%d").strftime('%d/%m')
+            texto_resumo += f"📅 *{dt_r_fmt}* às *{row['horario']}* — {row['nome_cliente']} ({row['servico']}) | R$ {row['valor']:.2f}\n"
 
         if whatsapp_prof_db:
             link_resumo = f"https://wa.me/{whatsapp_prof_db}?text={texto_resumo.replace(' ', '%20').replace('\n', '%0A')}"
@@ -711,7 +731,7 @@ with aba_agenda:
                 f"""
                 <a href="{link_resumo}" target="_blank" style="text-decoration: none;">
                     <button style="background-color: #25D366; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 20px;">
-                        📲 Enviar Lista de Hoje no Meu WhatsApp
+                        📲 Enviar Lista Filtrada no Meu WhatsApp
                     </button>
                 </a>
             """,
@@ -723,7 +743,8 @@ with aba_agenda:
             col_atual = cols[idx % 2]
             with col_atual:
                 with st.container(border=True):
-                    st.subheader(f"⏰ {row['horario']} — {row['nome_cliente']}")
+                    dt_card_fmt = datetime.strptime(str(row['data_atendimento']), "%Y-%m-%d").strftime('%d/%m/%Y')
+                    st.subheader(f"📅 {dt_card_fmt} - ⏰ {row['horario']} — {row['nome_cliente']}")
                     st.write(f"**Serviço:** {row['servico']}")
                     st.write(f"💰 **Valor:** R$ {row['valor']:.2f} ({row['forma_pagamento']}) | ⏱ {row['duracao_minutos']} min")
 
@@ -737,7 +758,7 @@ with aba_agenda:
                                 data_fmt_msg = dt_atend.strftime("%d/%m")
                                 msg = f"Olá, {row['nome_cliente']}! Estou passando para te lembrar que possui um agendamento para o dia {data_fmt_msg} / ({dia_sem_nome}-Feira) às {row['horario']}h. Confirme o agendamento respondendo: Confirmar ou Reagendar ou Cancelar."
                             else:
-                                msg = f"Olá {row['nome_cliente']}! Confirmado seu horário para {row['servico']} hoje às {row['horario']}?"
+                                msg = f"Olá {row['nome_cliente']}! Confirmado seu horário para {row['servico']} no dia {dt_card_fmt} às {row['horario']}?"
                             
                             link_wa = f"https://wa.me/55{tel_digits}?text={msg.replace(' ', '%20')}"
                             st.markdown(f"[💬 Mandar Lembrete no WhatsApp]({link_wa})")
@@ -751,7 +772,7 @@ with aba_agenda:
                             with col_ev2:
                                 novo_pag_card = st.selectbox("Pagamento", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], index=["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"].index(row['forma_pagamento']) if row['forma_pagamento'] in ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"] else 0)
                             
-                            novo_dur_card = st.selectbox("Duração", [30, 45, 60, 90, 120, 150, 180], index=[30, 45, 60, 90, 120, 150, 180].index(int(row['duracao_minutos'])) if int(row['duracao_minutos']) in [30, 45, 60, 90, 120, 150, 180] else 2, format_func=lambda x: f"{x} min")
+                            novo_dur_card = st.number_input("Duração (minutos)", min_value=5, max_value=480, value=int(row['duracao_minutos']), step=5, key=f"dur_card_{row['id']}")
                             novo_hor_card = st.time_input("Horário", value=datetime.strptime(row['horario'], "%H:%M").time())
                             
                             salvar_edicao_atend = st.form_submit_button("Guardar Alterações do Atendimento")
@@ -759,7 +780,7 @@ with aba_agenda:
                                 conn_ed = sqlite3.connect("agenda_unhas_v2.db")
                                 c_ed = conn_ed.cursor()
                                 c_ed.execute("UPDATE agendamentos SET servico = ?, valor = ?, forma_pagamento = ?, duracao_minutos = ?, horario = ? WHERE id = ?",
-                                             (novo_servico_card, novo_val_card, novo_pag_card, novo_dur_card, str(novo_hor_card)[:5], row['id']))
+                                             (novo_servico_card, novo_val_card, novo_pag_card, int(novo_dur_card), str(novo_hor_card)[:5], row['id']))
                                 conn_ed.commit()
                                 conn_ed.close()
                                 st.success("Atendimento atualizado com sucesso!")
@@ -821,7 +842,7 @@ with aba_agenda:
                             conn.close()
                             st.rerun()
     else:
-        st.info("Nenhum atendimento marcado para este dia.")
+        st.info("Nenhum atendimento encontrado para o período selecionado.")
 
 # ==========================================
 # ABA 2: CENTRAL DE RETENÇÃO (CRM)
@@ -918,7 +939,7 @@ with aba_crm:
                         with st.container(border=True):
                             dt_fmt = pd.to_datetime(ag_row['data_atendimento']).strftime('%d/%m/%Y')
                             st.markdown(f"**👤 {ag_row['nome_cliente']}** — 📅 {dt_fmt} às ⏰ {ag_row['horario']}")
-                            st.write(f"💅 **Serviço:** {ag_row['servico']} | ⏱️ {ag_row['duracao_minutos']} min | 💰 R$ {ag_row['valor']:.2f} ({ag_row['forma_pagamento']}) | Status: *{ag_row['status']}*")
+                            st.write(f"💅 **Serviço:** {ag_row['servico']} | ⏱ {ag_row['duracao_minutos']} min | 💰 R$ {ag_row['valor']:.2f} ({ag_row['forma_pagamento']}) | Status: *{ag_row['status']}*")
                             
                             with st.expander(f"✏️ Editar Agendamento de {ag_row['nome_cliente']}"):
                                 with st.form(f"form_crm_semana_{ag_row['id']}"):
@@ -928,14 +949,14 @@ with aba_crm:
                                         s_val = st.number_input("Valor (R$)", min_value=0.0, value=float(ag_row['valor']), step=5.0)
                                     with col_cs2:
                                         s_pag = st.selectbox("Pagamento", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], index=["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"].index(ag_row['forma_pagamento']) if ag_row['forma_pagamento'] in ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"] else 0)
-                                    s_dur = st.selectbox("Duração (min)", [30, 45, 60, 90, 120, 150, 180], index=2)
+                                    s_dur = st.number_input("Duração (minutos)", min_value=5, max_value=480, value=int(ag_row['duracao_minutos']), step=5, key=f"dur_sem_{ag_row['id']}")
                                     s_hor = st.time_input("Horário", value=datetime.strptime(ag_row['horario'], "%H:%M").time())
                                     
                                     if st.form_submit_button("Salvar Alterações na Semana"):
                                         conn_s = sqlite3.connect("agenda_unhas_v2.db")
                                         cs = conn_s.cursor()
                                         cs.execute("UPDATE agendamentos SET servico = ?, valor = ?, forma_pagamento = ?, duracao_minutos = ?, horario = ? WHERE id = ?",
-                                                   (s_serv, s_val, s_pag, s_dur, str(s_hor)[:5], ag_row['id']))
+                                                   (s_serv, s_val, s_pag, int(s_dur), str(s_hor)[:5], ag_row['id']))
                                         conn_s.commit()
                                         conn_s.close()
                                         st.success("Atualizado com sucesso!")
