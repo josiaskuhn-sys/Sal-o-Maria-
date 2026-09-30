@@ -1001,7 +1001,7 @@ with aba_crm:
                         )
                     
                     st.markdown("---")
-                    st.write("✏️ **Editar Dados da Cliente e Ciclo:**")
+                    st.write("✏️️ **Editar Dados da Cliente e Ciclo:**")
                     
                     col_e1, col_e2 = st.columns(2)
                     with col_e1:
