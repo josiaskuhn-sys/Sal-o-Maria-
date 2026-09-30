@@ -389,7 +389,6 @@ with st.sidebar:
                 tipo_nome = st.selectbox("Selecionar Cliente Salva", ["-- Digitar Novo Nome --"] + lista_contatos_nomes)
                 if tipo_nome != "-- Digitar Novo Nome --":
                     nome_cliente = tipo_nome
-                    # Buscar telefone automaticamente se houver
                     match_tel = df_contatos_db[df_contatos_db["nome"] == tipo_nome]["telefone"].values
                     tel_sugestao = match_tel[0] if len(match_tel) > 0 and match_tel[0] else ""
                 else:
@@ -439,7 +438,6 @@ with st.sidebar:
                         ),
                     )
 
-                    # Garantir que está na tabela de contatos
                     c.execute("SELECT id FROM contatos WHERE nome = ? AND profissional = ?", (nome_cliente, usuario_atual))
                     if not c.fetchone():
                         c.execute("INSERT INTO contatos (nome, telefone, profissional) VALUES (?, ?, ?)", (nome_cliente, telefone, usuario_atual))
@@ -597,7 +595,7 @@ aba_agenda, aba_crm, aba_fin, aba_contatos, aba_tarefas, aba_lixeira, aba_config
         "📇 Contatos",
         "📝 Tarefas",
         "🗑️ Lixeira",
-        "⚙️️ Configurações",
+        "⚙ Configurações",
     ]
 )
 
@@ -721,7 +719,7 @@ with aba_agenda:
                 with st.container(border=True):
                     st.subheader(f"⏰ {row['horario']} — {row['nome_cliente']}")
                     st.write(f"**Serviço:** {row['servico']}")
-                    st.write(f"💰 **Valor:** R$ {row['valor']:.2f} ({row['forma_pagamento']}) | ⏱️ {row['duracao_minutos']} min")
+                    st.write(f"💰 **Valor:** R$ {row['valor']:.2f} ({row['forma_pagamento']}) | ⏱️️ {row['duracao_minutos']} min")
 
                     if row["telefone"]:
                         tel_digits = "".join(filter(str.isdigit, str(row["telefone"])))
@@ -738,7 +736,6 @@ with aba_agenda:
                             link_wa = f"https://wa.me/55{tel_digits}?text={msg.replace(' ', '%20')}"
                             st.markdown(f"[💬 Mandar Lembrete no WhatsApp]({link_wa})")
 
-                    # OPÇÃO DE EDITAR ATENDIMENTO (PÓS-ATENDIMENTO)
                     with st.expander("✏️ Editar Atendimento / Valores / Serviço"):
                         with st.form(f"form_ed_atend_{row['id']}"):
                             novo_servico_card = st.selectbox("Serviço", servicos_disponiveis, index=servicos_disponiveis.index(row['servico']) if row['servico'] in servicos_disponiveis else 0)
@@ -905,7 +902,7 @@ with aba_crm:
                                 st.rerun()
 
         with sub_aba_semana:
-            st.markdown(f"### 📅 Lista de Agendamentos da Semana ({inicio_sem.strftime('%d/%m')} a {fim_sem.strftime('%d/%m')})")
+            st.markdown(f"### 📅 Lista de Agendamentos da Semana ({inicio_semana.strftime('%d/%m')} a {fim_semana.strftime('%d/%m')})")
             if not df_agendamentos_todos.empty:
                 df_agendamentos_todos["data_dt"] = pd.to_datetime(df_agendamentos_todos["data_atendimento"]).dt.date
                 agendamentos_semana = df_agendamentos_todos[(df_agendamentos_todos["data_dt"] >= inicio_semana) & (df_agendamentos_todos["data_dt"] <= fim_semana)].sort_values(by=["data_atendimento", "horario"])
@@ -1088,7 +1085,7 @@ with aba_fin:
         st.info("Nenhum dado financeiro registrado ainda.")
 
 # ==========================================
-# ABA 4: CONTATOS (COM OPÇÃO DE ADICIONAR)
+# ABA 4: CONTATOS
 # ==========================================
 with aba_contatos:
     st.subheader(f"📇 Agenda de Contatos — {usuario_atual}")
