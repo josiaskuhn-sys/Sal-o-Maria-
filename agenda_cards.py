@@ -454,7 +454,7 @@ with st.sidebar:
                         c.execute("UPDATE clientes_retencao SET ultimo_atendimento = ?, telefone = ?, valor = ?, forma_pagamento = ? WHERE id = ?", (data_iso, tel_clean, valor_servico, forma_pagto, existente_crm[0]))
                     else:
                         c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional, valor, forma_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagto))
+                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagamento))
 
                     conn.commit()
                     conn.close()
@@ -556,7 +556,7 @@ if not df_crm_tudo.empty:
     df_crm_tudo["ultimo_atendimento"] = pd.to_datetime(df_crm_tudo["ultimo_atendimento"], errors="coerce").dt.date
     df_crm_tudo["proximo_atendimento"] = df_crm_tudo.apply(lambda r: r["ultimo_atendimento"] + timedelta(days=int(r["ciclo_dias"])), axis=1)
     df_crm_tudo["dias_atraso"] = df_crm_tudo["proximo_atendimento"].apply(lambda d: (hoje_dt - d).days)
-    chamar_semana_topo = df_crm_tudo[(df_crm_tudo["proximo_atendimento"] >= inicio_semana) & (df_crm_tudo["proximo_atendimento"] <= fim_semana)].sort_values(by="proximo_atendimento")
+    chamar_semana_topo = df_crm_tudo[df_crm_tudo["proximo_atendimento"] <= fim_semana].sort_values(by="proximo_atendimento")
 else:
     chamar_semana_topo = pd.DataFrame()
 
@@ -586,7 +586,9 @@ if not df_agenda_hoje.empty or not chamar_semana_topo.empty or aviso_fim_mes:
                 st.info(f"📲 **CRM para Chamar esta Semana ({len(chamar_semana_topo)}):**")
                 for _, row in chamar_semana_topo.iterrows():
                     dt_prox_fmt = row["proximo_atendimento"].strftime('%d/%m')
-                    st.markdown(f"- 👤 **{row['nome']}** *(Retorno: {dt_prox_fmt})*")
+                    atraso_dias = row["dias_atraso"]
+                    status_txt = f"Vencido há {atraso_dias}d" if atraso_dias > 0 else ("Vence hoje" if atraso_dias == 0 else f"Retorno: {dt_prox_fmt}")
+                    st.markdown(f"- 👤 **{row['nome']}** *({status_txt})*")
             else:
                 st.success("✅ Nenhuma cliente para chamar esta semana.")
 else:
