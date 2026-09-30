@@ -385,20 +385,22 @@ with st.sidebar:
         st.header(f"➕ Agendar ({usuario_atual})")
 
         with st.form("form_rapido", clear_on_submit=True):
-            if lista_contatos_nomes:
-                tipo_nome = st.selectbox("Selecionar Cliente Salva", ["-- Digitar Novo Nome --"] + lista_contatos_nomes)
-                if tipo_nome != "-- Digitar Novo Nome --":
-                    nome_cliente = tipo_nome
-                    match_tel = df_contatos_db[df_contatos_db["nome"] == tipo_nome]["telefone"].values
+            modo_cli = st.radio("Origem da Cliente:", ["Cliente Existente", "Novo Contato"], horizontal=True, key="modo_cli_agenda")
+            
+            if modo_cli == "Cliente Existente":
+                if lista_contatos_nomes:
+                    nome_cliente = st.selectbox("Selecione a Cliente", lista_contatos_nomes)
+                    match_tel = df_contatos_db[df_contatos_db["nome"] == nome_cliente]["telefone"].values
                     tel_sugestao = match_tel[0] if len(match_tel) > 0 and match_tel[0] else ""
                 else:
-                    nome_cliente = st.text_input("Nome da Cliente*")
+                    st.warning("Nenhum contato salvo. Selecione 'Novo Contato'.")
+                    nome_cliente = ""
                     tel_sugestao = ""
+                telefone = st.text_input("WhatsApp", value=tel_sugestao, placeholder="54991341375")
             else:
-                nome_cliente = st.text_input("Nome da Cliente*")
-                tel_sugestao = ""
+                nome_cliente = st.text_input("Nome da Nova Cliente*")
+                telefone = st.text_input("WhatsApp do Novo Contato", placeholder="54991341375")
 
-            telefone = st.text_input("WhatsApp", value=tel_sugestao, placeholder="54991341375")
             servico = st.selectbox("Serviço*", servicos_disponiveis)
             
             col_v1, col_v2 = st.columns(2)
@@ -441,6 +443,9 @@ with st.sidebar:
                     c.execute("SELECT id FROM contatos WHERE nome = ? AND profissional = ?", (nome_cliente, usuario_atual))
                     if not c.fetchone():
                         c.execute("INSERT INTO contatos (nome, telefone, profissional) VALUES (?, ?, ?)", (nome_cliente, telefone, usuario_atual))
+                    else:
+                        if telefone:
+                            c.execute("UPDATE contatos SET telefone = ? WHERE nome = ? AND profissional = ?", (telefone, nome_cliente, usuario_atual))
 
                     c.execute("SELECT id FROM clientes_retencao WHERE nome = ? AND profissional = ?", (nome_cliente, usuario_atual))
                     existente_crm = c.fetchone()
@@ -453,7 +458,7 @@ with st.sidebar:
 
                     conn.commit()
                     conn.close()
-                    st.success("Horário marcado com sucesso!")
+                    st.success("Horário marcado e contato guardado com sucesso!")
                     st.rerun()
 
     elif tipo_cadastro == "👤 Cadastrar Cliente (CRM)":
@@ -719,7 +724,7 @@ with aba_agenda:
                 with st.container(border=True):
                     st.subheader(f"⏰ {row['horario']} — {row['nome_cliente']}")
                     st.write(f"**Serviço:** {row['servico']}")
-                    st.write(f"💰 **Valor:** R$ {row['valor']:.2f} ({row['forma_pagamento']}) | ⏱️️ {row['duracao_minutos']} min")
+                    st.write(f"💰 **Valor:** R$ {row['valor']:.2f} ({row['forma_pagamento']}) | ⏱ {row['duracao_minutos']} min")
 
                     if row["telefone"]:
                         tel_digits = "".join(filter(str.isdigit, str(row["telefone"])))
@@ -1240,3 +1245,17 @@ with aba_config:
             st.download_button("📥 Descarregar Base de Dados (.db)", f, file_name=f"backup_studio_{date.today()}.db")
     except:
         st.error("Erro ao gerar cópia de segurança.")
+
+    st.divider()
+    st.subheader("📂 Restaurar Base de Dados (Backup)")
+    st.write("Se precisar de recuperar os seus dados de um backup anterior, carregue aqui o seu ficheiro `.db`:")
+    uploaded_db = st.file_uploader("Escolher ficheiro de base de dados (.db)", type=["db"])
+    if uploaded_db is not None:
+        if st.button("Restaurar Dados"):
+            try:
+                with open("agenda_unhas_v2.db", "wb") as f:
+                    f.write(uploaded_db.getbuffer())
+                st.success("Base de dados restaurada com sucesso! A atualizar a aplicação...")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erro ao restaurar o ficheiro: {e}")
