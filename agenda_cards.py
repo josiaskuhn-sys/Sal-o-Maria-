@@ -1022,7 +1022,7 @@ with aba_crm:
                         st.rerun()
 
                     st.markdown("---")
-                    if st.button("🗑️️ Excluir do CRM", key=f"del_crm_{row['id']}"):
+                    if st.button("🗑️ Excluir do CRM", key=f"del_crm_{row['id']}"):
                         conn = sqlite3.connect("agenda_unhas_v2.db")
                         c = conn.cursor()
                         c.execute("DELETE FROM clientes_retencao WHERE id = ?", (row["id"],))
@@ -1264,7 +1264,7 @@ with aba_config:
                 st.rerun()
 
     st.divider()
-    st.subheader("🛡️️ Cópia de Segurança do Sistema")
+    st.subheader("🛡️ Cópia de Segurança do Sistema")
     try:
         with open("agenda_unhas_v2.db", "rb") as f:
             st.download_button("📥 Descarregar Base de Dados (.db)", f, file_name=f"backup_studio_{date.today()}.db")
