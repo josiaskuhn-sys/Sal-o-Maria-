@@ -557,7 +557,6 @@ if not df_crm_tudo.empty:
     df_crm_tudo["ultimo_atendimento"] = pd.to_datetime(df_crm_tudo["ultimo_atendimento"], errors="coerce").dt.date
     df_crm_tudo["proximo_atendimento"] = df_crm_tudo.apply(lambda r: r["ultimo_atendimento"] + timedelta(days=int(r["ciclo_dias"])), axis=1)
     df_crm_tudo["dias_atraso"] = df_crm_tudo["proximo_atendimento"].apply(lambda d: (hoje_dt - d).days)
-    # Mostra o CRM a partir de amanhã até o fim de semana (excluindo o dia de hoje, que já tem a aba própria)
     chamar_semana_topo = df_crm_tudo[(df_crm_tudo["proximo_atendimento"] >= amanha_dt) & (df_crm_tudo["proximo_atendimento"] <= fim_semana)].sort_values(by="proximo_atendimento")
 else:
     chamar_semana_topo = pd.DataFrame()
@@ -992,7 +991,7 @@ with aba_crm:
                         )
                     
                     st.markdown("---")
-                    st.write("✏️️ **Editar Dados da Cliente e Ciclo:**")
+                    st.write("✏️ **Editar Dados da Cliente e Ciclo:**")
                     
                     col_e1, col_e2 = st.columns(2)
                     with col_e1:
@@ -1023,7 +1022,7 @@ with aba_crm:
                         st.rerun()
 
                     st.markdown("---")
-                    if st.button("🗑️ Excluir do CRM", key=f"del_crm_{row['id']}"):
+                    if st.button("🗑️️ Excluir do CRM", key=f"del_crm_{row['id']}"):
                         conn = sqlite3.connect("agenda_unhas_v2.db")
                         c = conn.cursor()
                         c.execute("DELETE FROM clientes_retencao WHERE id = ?", (row["id"],))
@@ -1265,7 +1264,7 @@ with aba_config:
                 st.rerun()
 
     st.divider()
-    st.subheader("🛡️ Cópia de Segurança do Sistema")
+    st.subheader("🛡️️ Cópia de Segurança do Sistema")
     try:
         with open("agenda_unhas_v2.db", "rb") as f:
             st.download_button("📥 Descarregar Base de Dados (.db)", f, file_name=f"backup_studio_{date.today()}.db")
@@ -1274,7 +1273,7 @@ with aba_config:
 
     st.divider()
     st.subheader("📂 Restaurar Base de Dados (Backup)")
-    st.write("Se precisar de recuperar os seus dados de un backup anterior, carregue aqui o seu ficheiro `.db`:")
+    st.write("Se precisar de recuperar os seus dados de um backup anterior, carregue aqui o seu ficheiro `.db`:")
     uploaded_db = st.file_uploader("Escolher ficheiro de base de dados (.db)", type=["db"])
     if uploaded_db is not None:
         if st.button("Restaurar Dados"):
