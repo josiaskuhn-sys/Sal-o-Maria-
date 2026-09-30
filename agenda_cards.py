@@ -129,18 +129,29 @@ def init_db():
     if "whatsapp" not in colunas_perfis:
         c.execute("ALTER TABLE perfis ADD COLUMN whatsapp TEXT DEFAULT ''")
 
-    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('titulo_studio', 'Studio Maria Rossatto')")
-    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('subtitulo_studio', 'Sistema de Gestão & Retenção')")
-    c.execute("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('tema_estilo', 'Dourado Luxo')")
+    # Inserções seguras para Configurações
+    def upsert_config(cursor, chave, valor):
+        cursor.execute("SELECT valor FROM configuracoes WHERE chave = ?", (chave,))
+        if not cursor.fetchone():
+            cursor.execute("INSERT INTO configuracoes (chave, valor) VALUES (?, ?)", (chave, valor))
+
+    upsert_config(c, 'titulo_studio', 'Studio Maria Rossatto')
+    upsert_config(c, 'subtitulo_studio', 'Sistema de Gestão & Retenção')
+    upsert_config(c, 'tema_estilo', 'Dourado Luxo')
 
     servicos_maria_default = "Mão tradicional\nPé tradicional\nBlindagem\nEsmaltação em gel\nBanho de gel\nAlongamento\nManutenção\nPacote de mão"
     servicos_camily_default = "Design de Sobrancelha\nSobrancelha com Henna\nExtensão de Cílios Fio a Fio\nVolume Russo\nLash Lifting\nManutenção de Cílios"
 
-    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos, whatsapp) VALUES ('Maria', 'maria123', ?, '5554992508467')", (servicos_maria_default,))
-    c.execute("INSERT OR IGNORE INTO perfis (nome, senha, servicos, whatsapp) VALUES ('Camily', 'camily123', ?, '5554992406892')", (servicos_camily_default,))
+    def upsert_perfil(cursor, nome, senha, servicos, whatsapp):
+        cursor.execute("SELECT senha FROM perfis WHERE nome = ?", (nome,))
+        if not cursor.fetchone():
+            cursor.execute("INSERT INTO perfis (nome, senha, servicos, whatsapp) VALUES (?, ?, ?, ?)", (nome, senha, servicos, whatsapp))
 
-    c.execute("UPDATE perfis SET whatsapp = '5554992508467' WHERE nome = 'Maria'")
-    c.execute("UPDATE perfis SET whatsapp = '5554992406892' WHERE nome = 'Camily'")
+    upsert_perfil(c, 'Maria', 'maria123', servicos_maria_default, '5554992508467')
+    upsert_perfil(c, 'Camily', 'camily123', servicos_camily_default, '5554992406892')
+
+    c.execute("UPDATE perfis SET whatsapp = '5554992508467' WHERE nome = 'Maria' AND (whatsapp IS NULL OR whatsapp = '')")
+    c.execute("UPDATE perfis SET whatsapp = '5554992406892' WHERE nome = 'Camily' AND (whatsapp IS NULL OR whatsapp = '')")
 
     limite_30_dias = str(date.today() - timedelta(days=30))
     c.execute("DELETE FROM lixeira WHERE data_exclusao < ?", (limite_30_dias,))
