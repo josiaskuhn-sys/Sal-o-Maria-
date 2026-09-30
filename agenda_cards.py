@@ -464,7 +464,7 @@ with st.sidebar:
                         c.execute("UPDATE clientes_retencao SET ultimo_atendimento = ?, telefone = ?, valor = ?, forma_pagamento = ? WHERE id = ?", (data_iso, tel_clean, valor_servico, forma_pagto, existente_crm[0]))
                     else:
                         c.execute("INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional, valor, forma_pagamento) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagamento))
+                                  (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagto))
 
                     conn.commit()
                     conn.close()
