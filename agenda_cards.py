@@ -129,7 +129,6 @@ def init_db():
     if "whatsapp" not in colunas_perfis:
         c.execute("ALTER TABLE perfis ADD COLUMN whatsapp TEXT DEFAULT ''")
 
-    # Inserções seguras para Configurações
     def upsert_config(cursor, chave, valor):
         cursor.execute("SELECT valor FROM configuracoes WHERE chave = ?", (chave,))
         if not cursor.fetchone():
