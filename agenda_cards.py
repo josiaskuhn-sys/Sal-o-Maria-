@@ -647,6 +647,12 @@ with st.sidebar:
             data_atendimento = st.date_input("Data*", value=date.today(), format="DD/MM/YYYY", key="data_agendamento_form")
             horario = st.time_input("Horário*", value=datetime.strptime("14:00", "%H:%M").time(), key="horario_agendamento_form")
 
+            st.markdown("**🎯 Retorno no CRM (opcional)**")
+            opcoes_crm_ag = ["Não adicionar ao CRM", "15 dias", "21 dias", "25 dias", "30 dias", "Outro (dias abaixo)"]
+            crm_escolha = st.selectbox("Ciclo de retorno", opcoes_crm_ag, index=0, key="crm_agendamento_form")
+            crm_dias_outro = st.number_input("Dias (se escolher Outro)", min_value=1, max_value=365, value=10, step=1, key="crm_dias_agendamento_form")
+            st.caption("Só vai para o CRM se escolher um ciclo. Deixando “Não adicionar”, a cliente não entra no CRM.")
+
             salvar = st.form_submit_button("Guardar Horário")
 
             if salvar:
@@ -679,20 +685,26 @@ with st.sidebar:
                         elif tel_digitos:
                             c.execute("UPDATE contatos SET telefone = %s WHERE nome = %s AND profissional = %s", (tel_digitos, nome_cliente, usuario_atual))
 
-                        c.execute("SELECT id FROM clientes_retencao WHERE nome = %s AND profissional = %s", (nome_cliente, usuario_atual))
-                        existente_crm = c.fetchone()
-                        data_iso = data_atendimento.strftime("%Y-%m-%d")
-                        if existente_crm:
-                            c.execute(
-                                "UPDATE clientes_retencao SET ultimo_atendimento = %s, telefone = %s, valor = %s, forma_pagamento = %s WHERE id = %s",
-                                (data_iso, tel_clean, valor_servico, forma_pagto, existente_crm[0]),
-                            )
-                        else:
-                            c.execute(
-                                "INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional, valor, forma_pagamento) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                                (nome_cliente, tel_clean, 21, data_iso, usuario_atual, valor_servico, forma_pagto),
-                            )
-                    st.success("Horário marcado e contato guardado com sucesso!")
+                        # CRM só quando a profissional escolhe um ciclo
+                        msg_crm = ""
+                        if crm_escolha != "Não adicionar ao CRM":
+                            ciclo_ag = int(crm_dias_outro) if crm_escolha.startswith("Outro") else int(crm_escolha.split()[0])
+                            data_iso = data_atendimento.strftime("%Y-%m-%d")
+                            c.execute("SELECT id FROM clientes_retencao WHERE nome = %s AND profissional = %s", (nome_cliente, usuario_atual))
+                            existente_crm = c.fetchone()
+                            if existente_crm:
+                                c.execute(
+                                    "UPDATE clientes_retencao SET ultimo_atendimento = %s, ciclo_dias = %s, telefone = %s, valor = %s, forma_pagamento = %s WHERE id = %s",
+                                    (data_iso, ciclo_ag, tel_clean, valor_servico, forma_pagto, existente_crm[0]),
+                                )
+                            else:
+                                c.execute(
+                                    "INSERT INTO clientes_retencao (nome, telefone, ciclo_dias, ultimo_atendimento, profissional, valor, forma_pagamento) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                                    (nome_cliente, tel_clean, ciclo_ag, data_iso, usuario_atual, valor_servico, forma_pagto),
+                                )
+                            retorno = data_atendimento + timedelta(days=ciclo_ag)
+                            msg_crm = f" Retorno no CRM: {retorno.strftime('%d/%m/%Y')}."
+                    st.success("Horário marcado e contato guardado com sucesso!" + msg_crm)
                     st.rerun()
 
     elif tipo_cadastro == "👤 Cadastrar Cliente (CRM)":
