@@ -3,6 +3,7 @@ import sqlite3  # usado só para IMPORTAR backups antigos (.db)
 import tempfile
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta
+from urllib.parse import quote
 
 import pandas as pd
 import psycopg2
@@ -80,6 +81,44 @@ def buscar_um(sql, params=None):
         with conn.cursor() as c:
             c.execute(sql, params)
             return c.fetchone()
+
+
+# =====================================================
+# WHATSAPP
+# =====================================================
+def so_digitos(telefone):
+    return "".join(filter(str.isdigit, str(telefone or "")))
+
+
+def link_whatsapp(telefone, mensagem=""):
+    """Monta o link do WhatsApp. Aceita número com ou sem 55 na frente. Retorna None se o número for inválido."""
+    d = so_digitos(telefone)
+    if len(d) in (10, 11):
+        d = "55" + d
+    elif not (len(d) in (12, 13) and d.startswith("55")):
+        return None
+    return f"https://wa.me/{d}?text={quote(mensagem)}"
+
+
+def botao_whatsapp(telefone, mensagem, texto="💬 Enviar WhatsApp", chave=None):
+    link = link_whatsapp(telefone, mensagem)
+    if not link:
+        st.caption("📱 Sem WhatsApp válido cadastrado")
+        return
+    st.markdown(
+        f"""
+        <a href="{link}" target="_blank" style="text-decoration: none;">
+            <button style="background-color: #25D366; color: white; padding: 8px 16px; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-bottom: 8px;">
+                {texto}
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+DIAS_SEMANA = {0: "Segunda-feira", 1: "Terça-feira", 2: "Quarta-feira", 3: "Quinta-feira", 4: "Sexta-feira", 5: "Sábado", 6: "Domingo"}
+DIAS_CURTOS = {0: "Seg", 1: "Ter", 2: "Qua", 3: "Qui", 4: "Sex", 5: "Sáb", 6: "Dom"}
 
 
 # --- BASE DE DADOS & LIXEIRA ---
@@ -525,17 +564,25 @@ with st.sidebar:
 
         modo_cli = st.radio("Origem da Cliente:", ["Cliente Existente", "Novo Contato"], horizontal=True, key="modo_cli_agenda_radio")
 
+        # A escolha da cliente fica FORA do formulário para o WhatsApp atualizar na hora
+        nome_existente, tel_sugestao = "", ""
+        if modo_cli == "Cliente Existente":
+            if lista_contatos_nomes:
+                nome_existente = st.selectbox("Selecione a Cliente", lista_contatos_nomes, key="sel_cliente_existente")
+                match_tel = df_contatos_db[df_contatos_db["nome"] == nome_existente]["telefone"].values
+                tel_sugestao = match_tel[0] if len(match_tel) > 0 and match_tel[0] else ""
+            else:
+                st.warning("Nenhum contato salvo. Selecione 'Novo Contato'.")
+
         with st.form("form_rapido", clear_on_submit=True):
             if modo_cli == "Cliente Existente":
-                if lista_contatos_nomes:
-                    nome_cliente = st.selectbox("Selecione a Cliente", lista_contatos_nomes, key="sel_cliente_existente_form")
-                    match_tel = df_contatos_db[df_contatos_db["nome"] == nome_cliente]["telefone"].values
-                    tel_sugestao = match_tel[0] if len(match_tel) > 0 and match_tel[0] else ""
-                else:
-                    st.warning("Nenhum contato salvo. Selecione 'Novo Contato'.")
-                    nome_cliente = ""
-                    tel_sugestao = ""
-                telefone = st.text_input("WhatsApp", value=tel_sugestao, placeholder="54991341375", key="tel_existente_form")
+                nome_cliente = nome_existente
+                telefone = st.text_input(
+                    "WhatsApp (confira ou corrija)",
+                    value=tel_sugestao,
+                    placeholder="54991341375",
+                    key=f"tel_existente_form_{nome_existente}",
+                )
             else:
                 nome_cliente = st.text_input("Nome da Nova Cliente*", key="input_novo_nome_form")
                 telefone = st.text_input("WhatsApp do Novo Contato", placeholder="54991341375", key="tel_novo_form")
@@ -556,7 +603,8 @@ with st.sidebar:
             salvar = st.form_submit_button("Guardar Horário")
 
             if salvar:
-                tel_clean = "".join(filter(str.isdigit, str(telefone))) if telefone else "Não informado"
+                tel_digitos = so_digitos(telefone)
+                tel_clean = tel_digitos or "Não informado"
                 if not nome_cliente:
                     st.error("Preencha o nome da cliente!")
                 else:
@@ -567,7 +615,7 @@ with st.sidebar:
                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                             (
                                 nome_cliente,
-                                telefone,
+                                tel_digitos,
                                 servico,
                                 str(data_atendimento),
                                 str(horario)[:5],
@@ -580,9 +628,9 @@ with st.sidebar:
 
                         c.execute("SELECT id FROM contatos WHERE nome = %s AND profissional = %s", (nome_cliente, usuario_atual))
                         if not c.fetchone():
-                            c.execute("INSERT INTO contatos (nome, telefone, profissional) VALUES (%s, %s, %s)", (nome_cliente, telefone, usuario_atual))
-                        elif telefone:
-                            c.execute("UPDATE contatos SET telefone = %s WHERE nome = %s AND profissional = %s", (telefone, nome_cliente, usuario_atual))
+                            c.execute("INSERT INTO contatos (nome, telefone, profissional) VALUES (%s, %s, %s)", (nome_cliente, tel_digitos, usuario_atual))
+                        elif tel_digitos:
+                            c.execute("UPDATE contatos SET telefone = %s WHERE nome = %s AND profissional = %s", (tel_digitos, nome_cliente, usuario_atual))
 
                         c.execute("SELECT id FROM clientes_retencao WHERE nome = %s AND profissional = %s", (nome_cliente, usuario_atual))
                         existente_crm = c.fetchone()
@@ -700,7 +748,8 @@ if not df_crm_tudo.empty:
     df_crm_tudo["ultimo_atendimento"] = pd.to_datetime(df_crm_tudo["ultimo_atendimento"], errors="coerce").dt.date
     df_crm_tudo["proximo_atendimento"] = df_crm_tudo.apply(lambda r: r["ultimo_atendimento"] + timedelta(days=int(r["ciclo_dias"])), axis=1)
     df_crm_tudo["dias_atraso"] = df_crm_tudo["proximo_atendimento"].apply(lambda d: (hoje_dt - d).days)
-    chamar_semana_topo = df_crm_tudo[(df_crm_tudo["proximo_atendimento"] >= amanha_dt) & (df_crm_tudo["proximo_atendimento"] <= fim_semana)].sort_values(by="proximo_atendimento")
+    # CRM da semana: clientes com retorno até domingo (inclui as atrasadas)
+    chamar_semana_topo = df_crm_tudo[df_crm_tudo["proximo_atendimento"] <= fim_semana].sort_values(by="proximo_atendimento")
 else:
     chamar_semana_topo = pd.DataFrame()
 
@@ -714,30 +763,39 @@ if hoje_dt.day >= ultimo_dia_mes.day - 3:
     faturamento_mes_atual = df_mes_atual["valor"].sum() if not df_mes_atual.empty else 0.0
     aviso_fim_mes = f"🎉 **Fechamento de Mês:** O mês está a acabar! O seu faturamento total até agora é de **R$ {faturamento_mes_atual:.2f}**. Parabéns!"
 
-if not df_agenda_hoje.empty or not chamar_semana_topo.empty or aviso_fim_mes:
-    with st.expander("🔔 Central de Notificações Internas", expanded=True):
-        if aviso_fim_mes:
-            st.success(aviso_fim_mes)
-        col_al1, col_al2 = st.columns(2)
-        with col_al1:
-            if not df_agenda_hoje.empty:
-                st.warning(f"📅 **Hoje ({len(df_agenda_hoje)}):**")
-                for _, row in df_agenda_hoje.iterrows():
-                    st.markdown(f"- ⏰ **{row['horario']}** — {row['nome_cliente']} *({row['servico']})*")
-            else:
-                st.info("📅 Sem agendamentos para hoje.")
-        with col_al2:
-            if not chamar_semana_topo.empty:
-                st.info(f"📲 **Próximos Dias da Semana ({len(chamar_semana_topo)}):**")
-                for _, row in chamar_semana_topo.iterrows():
-                    dt_prox_fmt = row["proximo_atendimento"].strftime("%d/%m")
-                    dias_sem_pt = {0: "Seg", 1: "Ter", 2: "Qua", 3: "Qui", 4: "Sex", 5: "Sáb", 6: "Dom"}
-                    dia_nome = dias_sem_pt.get(row["proximo_atendimento"].weekday(), "")
-                    st.markdown(f"- 👤 **{row['nome']}** *(Retorno: {dia_nome}, {dt_prox_fmt})*")
-            else:
-                st.info("📅 Nenhuma cliente para chamar nos próximos dias desta semana.")
-else:
-    st.success("✅ Tudo em dia! Sem pendências para hoje ou próximos dias.")
+with st.expander("🔔 Central de Notificações Internas", expanded=True):
+    if aviso_fim_mes:
+        st.success(aviso_fim_mes)
+    col_al1, col_al2 = st.columns(2)
+
+    # Coluna 1: agenda de hoje
+    with col_al1:
+        if not df_agenda_hoje.empty:
+            st.warning(f"📅 **Agenda de Hoje ({len(df_agenda_hoje)}):**")
+            for _, row in df_agenda_hoje.iterrows():
+                st.markdown(f"- ⏰ **{row['horario']}** — {row['nome_cliente']} *({row['servico']})*")
+        else:
+            st.info("📅 Sem agendamentos para hoje.")
+
+    # Coluna 2: CRM da semana (quem chamar para retorno)
+    with col_al2:
+        if not chamar_semana_topo.empty:
+            st.info(f"🎯 **CRM da Semana — chamar para retorno ({len(chamar_semana_topo)}):**")
+            for _, row in chamar_semana_topo.iterrows():
+                prox = row["proximo_atendimento"]
+                dias = (prox - hoje_dt).days
+                if dias < 0:
+                    situacao = f"🔴 Atrasada há {-dias} dia(s)"
+                elif dias == 0:
+                    situacao = "🟠 Retorno é hoje"
+                else:
+                    situacao = f"🟢 {DIAS_CURTOS[prox.weekday()]}, {prox.strftime('%d/%m')}"
+                with st.container(border=True):
+                    st.markdown(f"**👤 {row['nome']}** — {situacao}")
+                    msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já está chegando o prazo da sua manutenção. Quer agendar um horário?"
+                    botao_whatsapp(row["telefone"], msg, texto="💬 Chamar no WhatsApp")
+        else:
+            st.success("🎯 Nenhuma cliente para chamar esta semana. CRM em dia!")
 
 st.divider()
 
@@ -876,7 +934,7 @@ with aba_agenda:
             texto_resumo += f"📅 *{dt_r_fmt}* às *{row['horario']}* — {row['nome_cliente']} ({row['servico']}) | R$ {row['valor']:.2f}\n"
 
         if whatsapp_prof_db:
-            texto_url = texto_resumo.replace(" ", "%20").replace("\n", "%0A")
+            texto_url = quote(texto_resumo)
             link_resumo = f"https://wa.me/{whatsapp_prof_db}?text={texto_url}"
             st.markdown(
                 f"""
@@ -899,23 +957,25 @@ with aba_agenda:
                     st.write(f"**Serviço:** {row['servico']}")
                     st.write(f"💰 **Valor:** R$ {row['valor']:.2f} ({row['forma_pagamento']}) | ⏱ {row['duracao_minutos']} min")
 
-                    if row["telefone"]:
-                        tel_digits = "".join(filter(str.isdigit, str(row["telefone"])))
-                        if tel_digits and tel_digits != "Naoinformado":
-                            if usuario_atual == "Maria":
-                                dt_atend = datetime.strptime(str(row["data_atendimento"]), "%Y-%m-%d")
-                                dias_sem_pt = {0: "Segunda", 1: "Terça", 2: "Quarta", 3: "Quinta", 4: "Sexta", 5: "Sábado", 6: "Domingo"}
-                                dia_sem_nome = dias_sem_pt.get(dt_atend.weekday(), "")
-                                data_fmt_msg = dt_atend.strftime("%d/%m")
-                                msg = f"Olá, {row['nome_cliente']}! Estou passando para te lembrar que possui um agendamento para o dia {data_fmt_msg} / ({dia_sem_nome}-Feira) às {row['horario']}h. Confirme o agendamento respondendo: Confirmar ou Reagendar ou Cancelar."
-                            else:
-                                msg = f"Olá {row['nome_cliente']}! Confirmado seu horário para {row['servico']} no dia {dt_card_fmt} às {row['horario']}?"
+                    # WhatsApp da cliente visível no card + botão de lembrete
+                    tel_card = so_digitos(row["telefone"])
+                    st.write(f"📱 **WhatsApp:** {tel_card if tel_card else 'não cadastrado'}")
 
-                            link_wa = f"https://wa.me/55{tel_digits}?text={msg.replace(' ', '%20')}"
-                            st.markdown(f"[💬 Mandar Lembrete no WhatsApp]({link_wa})")
+                    dt_atend = datetime.strptime(str(row["data_atendimento"]), "%Y-%m-%d")
+                    dia_sem_nome = DIAS_SEMANA.get(dt_atend.weekday(), "")
+                    if usuario_atual == "Maria":
+                        msg = (
+                            f"Olá, {row['nome_cliente']}! Estou passando para te lembrar que você possui um agendamento "
+                            f"para o dia {dt_atend.strftime('%d/%m')} ({dia_sem_nome}) às {row['horario']}h. "
+                            f"Confirme o agendamento respondendo: Confirmar, Reagendar ou Cancelar."
+                        )
+                    else:
+                        msg = f"Olá {row['nome_cliente']}! Confirmado seu horário para {row['servico']} no dia {dt_card_fmt} ({dia_sem_nome}) às {row['horario']}h?"
+                    botao_whatsapp(row["telefone"], msg, texto="💬 Mandar Lembrete no WhatsApp")
 
-                    with st.expander("✏️ Editar Atendimento / Valores / Serviço"):
+                    with st.expander("✏️ Editar Atendimento / WhatsApp / Valores / Serviço"):
                         with st.form(f"form_ed_atend_{row['id']}"):
+                            novo_tel_card = st.text_input("WhatsApp da cliente", value=tel_card, placeholder="54991341375", key=f"tel_card_{row['id']}")
                             novo_servico_card = st.selectbox("Serviço", servicos_disponiveis, index=servicos_disponiveis.index(row["servico"]) if row["servico"] in servicos_disponiveis else 0)
                             col_ev1, col_ev2 = st.columns(2)
                             with col_ev1:
@@ -928,10 +988,27 @@ with aba_agenda:
 
                             salvar_edicao_atend = st.form_submit_button("Guardar Alterações do Atendimento")
                             if salvar_edicao_atend:
-                                executar(
-                                    "UPDATE agendamentos SET servico = %s, valor = %s, forma_pagamento = %s, duracao_minutos = %s, horario = %s WHERE id = %s",
-                                    (novo_servico_card, novo_val_card, novo_pag_card, int(novo_dur_card), str(novo_hor_card)[:5], int(row["id"])),
-                                )
+                                novo_tel_digitos = so_digitos(novo_tel_card)
+                                with db() as conn:
+                                    c = conn.cursor()
+                                    c.execute(
+                                        "UPDATE agendamentos SET servico = %s, valor = %s, forma_pagamento = %s, duracao_minutos = %s, horario = %s WHERE id = %s",
+                                        (novo_servico_card, novo_val_card, novo_pag_card, int(novo_dur_card), str(novo_hor_card)[:5], int(row["id"])),
+                                    )
+                                    if novo_tel_digitos != tel_card:
+                                        # Corrige o número em todos os lugares: agendamentos, contatos e CRM
+                                        c.execute(
+                                            "UPDATE agendamentos SET telefone = %s WHERE nome_cliente = %s AND profissional = %s",
+                                            (novo_tel_digitos, row["nome_cliente"], usuario_atual),
+                                        )
+                                        c.execute(
+                                            "UPDATE contatos SET telefone = %s WHERE nome = %s AND profissional = %s",
+                                            (novo_tel_digitos, row["nome_cliente"], usuario_atual),
+                                        )
+                                        c.execute(
+                                            "UPDATE clientes_retencao SET telefone = %s WHERE nome = %s AND profissional = %s",
+                                            (novo_tel_digitos or "Não informado", row["nome_cliente"], usuario_atual),
+                                        )
                                 st.success("Atendimento atualizado com sucesso!")
                                 st.rerun()
 
@@ -1011,11 +1088,8 @@ with aba_crm:
                 with st.container(border=True):
                     st.markdown(f"### 👤 {row['nome']}")
                     st.write(f"📱 {row['telefone']} | Ciclo: {row['ciclo_dias']} dias | 💰 R$ {row.get('valor', 50.0):.2f} ({row.get('forma_pagamento', 'Pix')})")
-                    digits_cli = "".join(filter(str.isdigit, str(row["telefone"]))) if row["telefone"] else ""
-                    if digits_cli:
-                        msg = f"Oi {row['nome']}! Passando para avisar que já deu o prazo da sua manutenção!"
-                        link_wa = f"https://wa.me/55{digits_cli}?text={msg.replace(' ', '%20')}"
-                        st.markdown(f"[💬 WhatsApp]({link_wa})")
+                    msg = f"Oi {row['nome']}! Passando para avisar que já deu o prazo da sua manutenção!"
+                    botao_whatsapp(row["telefone"], msg, texto="💬 WhatsApp")
             st.divider()
 
         hoje = date.today()
@@ -1051,15 +1125,10 @@ with aba_crm:
                                 key=f"pag_crm_{row['id']}",
                             )
 
-                        digits_cli = "".join(filter(str.isdigit, str(row["telefone"]))) if row["telefone"] else ""
                         col_b1, col_b2 = st.columns(2)
                         with col_b1:
-                            if digits_cli and digits_cli != "Naoinformado":
-                                msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já deu o prazo da sua manutenção essa semana!"
-                                link_wa = f"https://wa.me/55{digits_cli}?text={msg.replace(' ', '%20')}"
-                                st.markdown(f"[💬 WhatsApp]({link_wa})")
-                            else:
-                                st.write("📱 Sem WhatsApp")
+                            msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já deu o prazo da sua manutenção essa semana!"
+                            botao_whatsapp(row["telefone"], msg, texto="💬 WhatsApp")
                         with col_b2:
                             if st.button("✅ Atendido Hoje", key=f"renovar_{row['id']}"):
                                 hoje_iso = date.today().strftime("%Y-%m-%d")
@@ -1119,20 +1188,8 @@ with aba_crm:
                     st.write(f"📱 WhatsApp: {row['telefone']}")
                     st.write(f"💰 Valor Padrão: R$ {row.get('valor', 50.0):.2f} ({row.get('forma_pagamento', 'Pix')}) | Ciclo: {row['ciclo_dias']} dias")
 
-                    digits_cli = "".join(filter(str.isdigit, str(row["telefone"]))) if row["telefone"] else ""
-                    if digits_cli and digits_cli != "Naoinformado":
-                        msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já deu o prazo da sua manutenção!"
-                        link_wa = f"https://wa.me/55{digits_cli}?text={msg.replace(' ', '%20')}"
-                        st.markdown(
-                            f"""
-                            <a href="{link_wa}" target="_blank" style="text-decoration: none;">
-                                <button style="background-color: #25D366; color: white; padding: 8px 16px; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-bottom: 10px;">
-                                    💬 Enviar Mensagem no WhatsApp
-                                </button>
-                            </a>
-                        """,
-                            unsafe_allow_html=True,
-                        )
+                    msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já deu o prazo da sua manutenção!"
+                    botao_whatsapp(row["telefone"], msg, texto="💬 Enviar Mensagem no WhatsApp")
 
                     st.markdown("---")
                     st.write("✏️ **Editar Dados da Cliente e Ciclo:**")
@@ -1300,19 +1357,7 @@ with aba_contatos:
                     tel_exib = row["telefone"] if row["telefone"] else "Não cadastrado"
                     st.write(f"📱 **WhatsApp:** {tel_exib}")
 
-                    digits_cont = "".join(filter(str.isdigit, str(row["telefone"]))) if row["telefone"] else ""
-                    if digits_cont and digits_cont != "Naoinformado":
-                        link_wa_contato = f"https://wa.me/55{digits_cont}?text=Olá%20{row['nome']}!%20Tudo%20bem?"
-                        st.markdown(
-                            f"""
-                            <a href="{link_wa_contato}" target="_blank" style="text-decoration: none;">
-                                <button style="background-color: #25D366; color: white; padding: 8px 16px; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%;">
-                                    💬 Abrir WhatsApp
-                                </button>
-                            </a>
-                        """,
-                            unsafe_allow_html=True,
-                        )
+                    botao_whatsapp(row["telefone"], f"Olá {row['nome']}! Tudo bem?", texto="💬 Abrir WhatsApp")
     else:
         st.info("Nenhum contato cadastrado ainda.")
 
