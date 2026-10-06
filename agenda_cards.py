@@ -121,6 +121,56 @@ DIAS_SEMANA = {0: "Segunda-feira", 1: "Terça-feira", 2: "Quarta-feira", 3: "Qui
 DIAS_CURTOS = {0: "Seg", 1: "Ter", 2: "Qua", 3: "Qui", 4: "Sex", 5: "Sáb", 6: "Dom"}
 
 
+def mensagem_lembrete(nome, servico, data_iso, horario, profissional):
+    dt = datetime.strptime(str(data_iso), "%Y-%m-%d")
+    dia = DIAS_SEMANA.get(dt.weekday(), "")
+    if profissional == "Maria":
+        return (
+            f"Olá, {nome}! Estou passando para te lembrar que você possui um agendamento "
+            f"para o dia {dt.strftime('%d/%m')} ({dia}) às {horario}h. "
+            f"Confirme o agendamento respondendo: Confirmar, Reagendar ou Cancelar."
+        )
+    return f"Olá {nome}! Confirmado seu horário para {servico} no dia {dt.strftime('%d/%m/%Y')} ({dia}) às {horario}h?"
+
+
+# =====================================================
+# DURAÇÃO DOS ATENDIMENTOS
+# =====================================================
+OPCOES_DURACAO = {
+    "30 min": 30, "45 min": 45, "1h": 60, "1h15": 75, "1h30": 90, "1h45": 105,
+    "2h": 120, "2h30": 150, "3h": 180, "3h30": 210, "4h": 240, "4h30": 270, "5h": 300,
+}
+PERSONALIZADA = "✏️ Personalizada (horas + minutos)"
+
+
+def formatar_duracao(minutos):
+    minutos = int(minutos or 0)
+    h, m = divmod(minutos, 60)
+    if h == 0:
+        return f"{m} min"
+    return f"{h}h" if m == 0 else f"{h}h{m:02d}"
+
+
+def campo_duracao(chave, atual=60):
+    """Duração com opções prontas + campos de horas e minutos para escolher qualquer tempo.
+    Funciona dentro de formulários: os campos de horas/minutos ficam sempre visíveis."""
+    atual = int(atual or 60)
+    opcoes = list(OPCOES_DURACAO.keys()) + [PERSONALIZADA]
+    rotulo = formatar_duracao(atual)
+    idx = opcoes.index(rotulo) if rotulo in OPCOES_DURACAO else len(opcoes) - 1
+    escolha = st.selectbox("Duração*", opcoes, index=idx, key=f"dur_op_{chave}")
+    h_ini, m_ini = divmod(atual, 60)
+    c1, c2 = st.columns(2)
+    with c1:
+        horas = st.number_input("Horas", min_value=0, max_value=12, value=h_ini, step=1, key=f"dur_h_{chave}")
+    with c2:
+        mins = st.number_input("Minutos", min_value=0, max_value=59, value=m_ini, step=5, key=f"dur_m_{chave}")
+    st.caption("Horas e minutos só contam se escolher “Personalizada”.")
+    if escolha == PERSONALIZADA:
+        return max(5, int(horas) * 60 + int(mins))
+    return OPCOES_DURACAO[escolha]
+
+
 # --- BASE DE DADOS & LIXEIRA ---
 @st.cache_resource(ttl=6 * 60 * 60)
 def init_db():
@@ -589,11 +639,8 @@ with st.sidebar:
 
             servico = st.selectbox("Serviço*", servicos_disponiveis, key="servico_agendamento_form")
 
-            col_v1, col_v2 = st.columns(2)
-            with col_v1:
-                valor_servico = st.number_input("Valor (R$)*", min_value=0.0, value=50.0, step=5.0, key="valor_agendamento_form")
-            with col_v2:
-                duracao_servico = st.number_input("Duração (minutos)*", min_value=5, max_value=480, value=60, step=5, key="duracao_agendamento_form")
+            valor_servico = st.number_input("Valor (R$)*", min_value=0.0, value=50.0, step=5.0, key="valor_agendamento_form")
+            duracao_servico = campo_duracao("novo_agendamento", 60)
 
             forma_pagto = st.selectbox("Forma de Pagamento*", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], key="pagto_agendamento_form")
 
@@ -655,10 +702,8 @@ with st.sidebar:
             telefone = st.text_input("WhatsApp*", placeholder="54991341375", key="crm_tel_input")
 
             ciclo_opcao_crm = st.selectbox("Ciclo de Retorno (Dias)*", [15, 21, 25, 30, "Outro (Personalizado)"], index=1, key="sidebar_crm_ciclo_op")
-            if ciclo_opcao_crm == "Outro (Personalizado)":
-                ciclo_dias_crm = st.number_input("Digite a quantidade de dias:", min_value=1, max_value=365, value=10, step=1, key="sidebar_crm_ciclo_dig")
-            else:
-                ciclo_dias_crm = int(ciclo_opcao_crm)
+            ciclo_dig = st.number_input("Dias (se escolher Outro):", min_value=1, max_value=365, value=10, step=1, key="sidebar_crm_ciclo_dig")
+            ciclo_dias_crm = int(ciclo_dig) if ciclo_opcao_crm == "Outro (Personalizado)" else int(ciclo_opcao_crm)
 
             col_vc1, col_vc2 = st.columns(2)
             with col_vc1:
@@ -726,32 +771,32 @@ subtitulo_atual = get_config("subtitulo_studio")
 emoji_perfil = "💅" if usuario_atual == "Maria" else "👁️✨"
 st.title(f"{emoji_perfil} {titulo_atual} — Painel da {usuario_atual}")
 
-# --- CENTRAL DE ALERTAS (HOJE + RESTO DA SEMANA CRM) ---
-hoje_str = date.today().isoformat()
-
-df_agenda_hoje = ler_df(
-    "SELECT horario, nome_cliente, servico, valor FROM agendamentos WHERE data_atendimento = %s AND profissional = %s ORDER BY horario ASC",
-    (hoje_str, usuario_atual),
-)
-
-df_crm_tudo = ler_df(
-    "SELECT id, nome, telefone, ultimo_atendimento, ciclo_dias FROM clientes_retencao WHERE profissional = %s",
-    (usuario_atual,),
-)
-
+# --- CENTRAL DE ALERTAS (AGENDA DE HOJE + RESTO DA SEMANA) ---
 hoje_dt = date.today()
 inicio_semana = hoje_dt - timedelta(days=hoje_dt.weekday())
 fim_semana = inicio_semana + timedelta(days=6)
 amanha_dt = hoje_dt + timedelta(days=1)
 
-if not df_crm_tudo.empty:
-    df_crm_tudo["ultimo_atendimento"] = pd.to_datetime(df_crm_tudo["ultimo_atendimento"], errors="coerce").dt.date
-    df_crm_tudo["proximo_atendimento"] = df_crm_tudo.apply(lambda r: r["ultimo_atendimento"] + timedelta(days=int(r["ciclo_dias"])), axis=1)
-    df_crm_tudo["dias_atraso"] = df_crm_tudo["proximo_atendimento"].apply(lambda d: (hoje_dt - d).days)
-    # CRM da semana: clientes com retorno até domingo (inclui as atrasadas)
-    chamar_semana_topo = df_crm_tudo[df_crm_tudo["proximo_atendimento"] <= fim_semana].sort_values(by="proximo_atendimento")
-else:
-    chamar_semana_topo = pd.DataFrame()
+df_agenda_hoje = ler_df(
+    "SELECT * FROM agendamentos WHERE data_atendimento = %s AND profissional = %s AND status <> 'Cancelado' ORDER BY horario ASC",
+    (hoje_dt.isoformat(), usuario_atual),
+)
+df_agenda_semana = ler_df(
+    "SELECT * FROM agendamentos WHERE data_atendimento >= %s AND data_atendimento <= %s AND profissional = %s AND status <> 'Cancelado' ORDER BY data_atendimento ASC, horario ASC",
+    (amanha_dt.isoformat(), fim_semana.isoformat(), usuario_atual),
+)
+
+
+def card_painel(row, mostrar_dia):
+    with st.container(border=True):
+        quando = f"⏰ **{row['horario']}**"
+        if mostrar_dia:
+            dt = datetime.strptime(str(row["data_atendimento"]), "%Y-%m-%d")
+            quando = f"📅 **{DIAS_CURTOS[dt.weekday()]}, {dt.strftime('%d/%m')}** · " + quando
+        st.markdown(f"{quando} — **{row['nome_cliente']}** · {row['servico']} · ⏱ {formatar_duracao(row['duracao_minutos'])} · *{row['status']}*")
+        msg = mensagem_lembrete(row["nome_cliente"], row["servico"], row["data_atendimento"], row["horario"], usuario_atual)
+        botao_whatsapp(row["telefone"], msg, texto="💬 Confirmar no WhatsApp")
+
 
 ultimo_dia_mes = (hoje_dt.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 aviso_fim_mes = ""
@@ -773,29 +818,18 @@ with st.expander("🔔 Central de Notificações Internas", expanded=True):
         if not df_agenda_hoje.empty:
             st.warning(f"📅 **Agenda de Hoje ({len(df_agenda_hoje)}):**")
             for _, row in df_agenda_hoje.iterrows():
-                st.markdown(f"- ⏰ **{row['horario']}** — {row['nome_cliente']} *({row['servico']})*")
+                card_painel(row, mostrar_dia=False)
         else:
             st.info("📅 Sem agendamentos para hoje.")
 
-    # Coluna 2: CRM da semana (quem chamar para retorno)
+    # Coluna 2: agenda do resto da semana atual (até domingo)
     with col_al2:
-        if not chamar_semana_topo.empty:
-            st.info(f"🎯 **CRM da Semana — chamar para retorno ({len(chamar_semana_topo)}):**")
-            for _, row in chamar_semana_topo.iterrows():
-                prox = row["proximo_atendimento"]
-                dias = (prox - hoje_dt).days
-                if dias < 0:
-                    situacao = f"🔴 Atrasada há {-dias} dia(s)"
-                elif dias == 0:
-                    situacao = "🟠 Retorno é hoje"
-                else:
-                    situacao = f"🟢 {DIAS_CURTOS[prox.weekday()]}, {prox.strftime('%d/%m')}"
-                with st.container(border=True):
-                    st.markdown(f"**👤 {row['nome']}** — {situacao}")
-                    msg = f"Oi {row['nome']}! Tudo bem? Passando para avisar que já está chegando o prazo da sua manutenção. Quer agendar um horário?"
-                    botao_whatsapp(row["telefone"], msg, texto="💬 Chamar no WhatsApp")
+        if not df_agenda_semana.empty:
+            st.info(f"🗓️ **Resto da Semana — até {fim_semana.strftime('%d/%m')} ({len(df_agenda_semana)}):**")
+            for _, row in df_agenda_semana.iterrows():
+                card_painel(row, mostrar_dia=True)
         else:
-            st.success("🎯 Nenhuma cliente para chamar esta semana. CRM em dia!")
+            st.info(f"🗓️ Sem mais agendamentos nesta semana (até {fim_semana.strftime('%d/%m')}).")
 
 st.divider()
 
@@ -955,22 +989,13 @@ with aba_agenda:
                     dt_card_fmt = datetime.strptime(str(row["data_atendimento"]), "%Y-%m-%d").strftime("%d/%m/%Y")
                     st.subheader(f"📅 {dt_card_fmt} - ⏰ {row['horario']} — {row['nome_cliente']}")
                     st.write(f"**Serviço:** {row['servico']}")
-                    st.write(f"💰 **Valor:** R$ {row['valor']:.2f} ({row['forma_pagamento']}) | ⏱ {row['duracao_minutos']} min")
+                    st.write(f"💰 **Valor:** R$ {row['valor']:.2f} ({row['forma_pagamento']}) | ⏱ {formatar_duracao(row['duracao_minutos'])}")
 
                     # WhatsApp da cliente visível no card + botão de lembrete
                     tel_card = so_digitos(row["telefone"])
                     st.write(f"📱 **WhatsApp:** {tel_card if tel_card else 'não cadastrado'}")
 
-                    dt_atend = datetime.strptime(str(row["data_atendimento"]), "%Y-%m-%d")
-                    dia_sem_nome = DIAS_SEMANA.get(dt_atend.weekday(), "")
-                    if usuario_atual == "Maria":
-                        msg = (
-                            f"Olá, {row['nome_cliente']}! Estou passando para te lembrar que você possui um agendamento "
-                            f"para o dia {dt_atend.strftime('%d/%m')} ({dia_sem_nome}) às {row['horario']}h. "
-                            f"Confirme o agendamento respondendo: Confirmar, Reagendar ou Cancelar."
-                        )
-                    else:
-                        msg = f"Olá {row['nome_cliente']}! Confirmado seu horário para {row['servico']} no dia {dt_card_fmt} ({dia_sem_nome}) às {row['horario']}h?"
+                    msg = mensagem_lembrete(row["nome_cliente"], row["servico"], row["data_atendimento"], row["horario"], usuario_atual)
                     botao_whatsapp(row["telefone"], msg, texto="💬 Mandar Lembrete no WhatsApp")
 
                     with st.expander("✏️ Editar Atendimento / WhatsApp / Valores / Serviço"):
@@ -983,7 +1008,7 @@ with aba_agenda:
                             with col_ev2:
                                 novo_pag_card = st.selectbox("Pagamento", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], index=["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"].index(row["forma_pagamento"]) if row["forma_pagamento"] in ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"] else 0)
 
-                            novo_dur_card = st.number_input("Duração (minutos)", min_value=5, max_value=480, value=int(row["duracao_minutos"]), step=5, key=f"dur_card_{row['id']}")
+                            novo_dur_card = campo_duracao(f"card_{row['id']}", row["duracao_minutos"])
                             novo_hor_card = st.time_input("Horário", value=datetime.strptime(row["horario"], "%H:%M").time())
 
                             salvar_edicao_atend = st.form_submit_button("Guardar Alterações do Atendimento")
@@ -1157,7 +1182,7 @@ with aba_crm:
                         with st.container(border=True):
                             dt_fmt = pd.to_datetime(ag_row["data_atendimento"]).strftime("%d/%m/%Y")
                             st.markdown(f"**👤 {ag_row['nome_cliente']}** — 📅 {dt_fmt} às ⏰ {ag_row['horario']}")
-                            st.write(f"💅 **Serviço:** {ag_row['servico']} | ⏱ {ag_row['duracao_minutos']} min | 💰 R$ {ag_row['valor']:.2f} ({ag_row['forma_pagamento']}) | Status: *{ag_row['status']}*")
+                            st.write(f"💅 **Serviço:** {ag_row['servico']} | ⏱ {formatar_duracao(ag_row['duracao_minutos'])} | 💰 R$ {ag_row['valor']:.2f} ({ag_row['forma_pagamento']}) | Status: *{ag_row['status']}*")
 
                             with st.expander(f"✏️ Editar Agendamento de {ag_row['nome_cliente']}"):
                                 with st.form(f"form_crm_semana_{ag_row['id']}"):
@@ -1167,7 +1192,7 @@ with aba_crm:
                                         s_val = st.number_input("Valor (R$)", min_value=0.0, value=float(ag_row["valor"]), step=5.0)
                                     with col_cs2:
                                         s_pag = st.selectbox("Pagamento", ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"], index=["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"].index(ag_row["forma_pagamento"]) if ag_row["forma_pagamento"] in ["Dinheiro", "Pix", "Cartão Débito", "Cartão Crédito"] else 0)
-                                    s_dur = st.number_input("Duração (minutos)", min_value=5, max_value=480, value=int(ag_row["duracao_minutos"]), step=5, key=f"dur_sem_{ag_row['id']}")
+                                    s_dur = campo_duracao(f"sem_{ag_row['id']}", ag_row["duracao_minutos"])
                                     s_hor = st.time_input("Horário", value=datetime.strptime(ag_row["horario"], "%H:%M").time())
 
                                     if st.form_submit_button("Salvar Alterações na Semana"):
