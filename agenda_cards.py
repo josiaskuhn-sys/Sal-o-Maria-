@@ -1395,6 +1395,38 @@ with aba_contatos:
                     st.write(f"📱 **WhatsApp:** {tel_exib}")
 
                     botao_whatsapp(row["telefone"], f"Olá {row['nome']}! Tudo bem?", texto="💬 Abrir WhatsApp")
+
+                    # Exclusão permanente com confirmação em dois passos
+                    chave_conf = f"confirma_del_contato_{row['id']}"
+                    if not st.session_state.get(chave_conf):
+                        if st.button("🗑️ Excluir contato", key=f"del_contato_{row['id']}"):
+                            st.session_state[chave_conf] = True
+                            st.rerun()
+                    else:
+                        st.warning(
+                            f"Excluir **{row['nome']}** para sempre? O contato sai da agenda de contatos e do CRM. "
+                            "Os horários já registrados continuam no histórico e no financeiro."
+                        )
+                        col_c1, col_c2 = st.columns(2)
+                        with col_c1:
+                            if st.button("✅ Sim, excluir", key=f"sim_del_contato_{row['id']}"):
+                                with db() as conn:
+                                    c = conn.cursor()
+                                    c.execute("DELETE FROM contatos WHERE id = %s", (int(row["id"]),))
+                                    c.execute(
+                                        "DELETE FROM clientes_retencao WHERE nome = %s AND profissional = %s",
+                                        (row["nome"], usuario_atual),
+                                    )
+                                    c.execute(
+                                        "INSERT INTO lixeira (tipo_item, dados_item, data_exclusao) VALUES (%s, %s, %s)",
+                                        ("contato", f"[{usuario_atual}] Contato: {row['nome']} | {row['telefone'] or 'sem WhatsApp'}", str(date.today())),
+                                    )
+                                st.session_state.pop(chave_conf, None)
+                                st.rerun()
+                        with col_c2:
+                            if st.button("Cancelar", key=f"nao_del_contato_{row['id']}"):
+                                st.session_state.pop(chave_conf, None)
+                                st.rerun()
     else:
         st.info("Nenhum contato cadastrado ainda.")
 
