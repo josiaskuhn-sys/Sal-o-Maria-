@@ -1,3 +1,5 @@
 streamlit
 pandas
 streamlit-calendar
+psycopg2-binary
+openpyxl
